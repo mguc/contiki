@@ -28,7 +28,7 @@ modified by Philipp Scholl <scholl@teco.edu>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "dev/uart0.h"
+#include "dev/uart1.h"
 
 static char*  bf, buf[14], uc, zs;
 static unsigned int num;
@@ -209,9 +209,9 @@ int puts(const char *s)
 #if SLIP_BRIDGE_CONF_NO_PUTCHAR
 int putchar(int c)
 {
-  uart0_writeb(c);
+  uart1_writeb(c);
   if(c=='\n')
-    uart0_writeb('\r');
+    uart1_writeb('\r');
   return 1;
 }
 #endif

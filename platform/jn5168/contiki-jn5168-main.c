@@ -47,6 +47,7 @@
 #include <AppHardwareApi.h>
 #include <recal.h>
 #include "dev/uart0.h"
+#include "dev/uart1.h"
 
 #include "contiki.h"
 #include "net/netstack.h"
@@ -149,9 +150,9 @@ set_gateway(void)
 {
   if(!is_gateway) {
     leds_on(LEDS_RED);
-    printf("%d.%d: making myself the IP network gateway.\n\n",
+    PRINTF("%d.%d: making myself the IP network gateway.\n\n",
      linkaddr_node_addr.u8[0], linkaddr_node_addr.u8[1]);
-    printf("IPv4 address of the gateway: %d.%d.%d.%d\n\n",
+    PRINTF("IPv4 address of the gateway: %d.%d.%d.%d\n\n",
      uip_ipaddr_to_quad(&uip_hostaddr));
     uip_over_mesh_set_gateway(&linkaddr_node_addr);
     uip_over_mesh_make_announced_gateway();
@@ -288,6 +289,7 @@ main(void)
   process_init();
   ctimer_init();
   uart0_init(UART_BAUD_RATE); /* Must come before first PRINTF */
+  uart1_init(UART_BAUD_RATE); /* Must come before first PRINTF */
 
 #if USE_SLIP_UART1
 #include "dev/uart1.h"
@@ -424,7 +426,7 @@ main(void)
 void
 log_message(char *m1, char *m2)
 {
-  printf("%s%s\n", m1, m2);
+  PRINTF("%s%s\n", m1, m2);
 }
 #endif /* LOG_CONF_ENABLED */
 /*---------------------------------------------------------------------------*/

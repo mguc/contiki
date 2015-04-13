@@ -335,7 +335,7 @@ typedef uint32_t rtimer_clock_t;
 #define UIP_CONF_TCP_SPLIT       0
 
 #define UIP_CONF_BYTE_ORDER      UIP_BIG_ENDIAN
-#define UIP_CONF_TCP       			 0
+#define UIP_CONF_TCP       		 1
 #define UIP_CONF_LOGGING         0
 #else /* NETSTACK_CONF_WITH_IPV6 */
 

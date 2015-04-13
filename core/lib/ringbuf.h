@@ -129,6 +129,11 @@ int     ringbuf_size(struct ringbuf *r);
  */
 int     ringbuf_elements(struct ringbuf *r);
 
+/**
+ * \brief      Flush the ring buffer without getting the elements.
+ * \param r    A pointer to a struct ringbuf to hold the state of the ring buffer
+ */
+void    ringbuf_flush(struct ringbuf *r);
 #endif /* RINGBUF_H_ */
 
 /** @}*/

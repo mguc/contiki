@@ -104,3 +104,9 @@ ringbuf_elements(struct ringbuf *r)
   return (r->put_ptr - r->get_ptr) & r->mask;
 }
 /*---------------------------------------------------------------------------*/
+void
+ringbuf_flush(struct ringbuf *r)
+{
+  r->put_ptr = r->get_ptr;
+}
+/*---------------------------------------------------------------------------*/
