@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doc>
+	<keypadMapping>
+		<key id="MUTE" code="#0004"></key>
+		<key id="HOME" code="#0002"></key>
+		<key id="POWER" code="#0001"></key>
+		<key id="VOLUP" code="#0020" repeat="100"></key>
+		<key id="VOLDOWN" code="#2000" repeat="800"></key>
+		<key id="BACK" code="#0010"></key>
+		<key id="CHUP" code="#0008"></key>
+		<key id="CHDOWN" code="#0800"></key>
+		<key id="LEFT" code="#0200"></key>
+		<key id="RIGHT" code="#0080"></key>
+		<key id="UP" code="#0040"></key>
+		<key id="DOWN" code="#0400"></key>
+		<key id="OK" code="#0100"></key>
+	</keypadMapping>
+	<appConfig powerSaveTimout="30"/>
+	<guiConfig touchRegionModificator="30" dotColor="#B0AFAFAF" dotActiveColor="#B0FFFFFF" dotDistance="20" dotRadius="4" dotYPos = "730" debugDot="1"/>
+	<popupStyle id="volume" x="0" y="250" height="200" width="480" backgroundColor="#ffFFFFFF" >
+		<button x="190" y="20" height="100" width="100" id="b1" backgroundColor="#FFFFFFFF" frameColor="#00000000" icoColor="#FF808080" icoFont="symbol" icoChar="#E1A9"></button>
+		<progressBar id="progress" progressBarColor="#FF7070B0" backgroundColor="#FFD0D0D0" x="10" y="150" height="10" width="460"/>
+	</popupStyle>
+	<popupStyle id="hello" x="0" y="250" height="200" width="480" backgroundColor="#ffFFFFFF" >
+		<button x="190" y="10" height="100" width="100" id="b1" backgroundColor="#FFFFFFFF" frameColor="#00000000" icoColor="#FF808080" icoFont="symbol" icoChar="#E054"></button>
+		<message font="roboto30" alignment="Center" x="10" y="100" width="460" height="70" backgroundColor="#00000000" textColor="#FF808080" icoColor="#FF808080"></message>
+	</popupStyle>
+		<popupStyle id="update" x="0" y="250" height="200" width="480" backgroundColor="#ffFFFFFF" >
+		<button x="190" y="10" height="100" width="100" id="b1" backgroundColor="#FFFFFFFF" frameColor="#00000000" icoColor="#FF808080" icoFont="symbol" icoChar="#E1C2"></button>
+		<message font="roboto30" alignment="Center" x="10" y="100" width="460" height="70" backgroundColor="#00000000" textColor="#FF808080" icoColor="#FF808080"></message>
+	</popupStyle>
+	<popupStyle id="YesNo" x="0" y="250" height="250" width="480" backgroundColor="#ffFFFFFF" >
+		<message font="roboto30" alignment="Center" x="10" y="20" width="460" height="70" backgroundColor="#00000000" textColor="#FF808080" icoColor="#FF808080"></message>
+		<button x="0" y="200" height="50" width="240" id="bYes" text="Yes" onClick="JNCheck('yes')" backgroundColor="#7fdddddd" textColor="#FFFFFFFF" font="normal" />
+		<button x="240" y="200" height="50" width="240" id="bNo" text="No" onClick="JNCheck('no')" backgroundColor="#7fdddddd" textColor="#FFFFFFFF" font="normal" />
+	</popupStyle>
+	<header height="30" backgroundColor="#A0707070">
+		<guiClock backgroundColor="#00000000" foregroundColor="#FFFFFFFF" text="" font="normal" alignment="Center" x="160" y="6" width="160" height="20" />
+		<image id="iSignal" contentId="signal.png" x="420" y="10" />
+		<image id="Battery" contentId="battery_anim.png" x="6" y="8" />
+	</header>
+	<screen type="Custom" id="0" collection="1/3" backgroundColor="#00000000" onSlideToLeft="ChangeScreen(6,-1)" onSlideToRight="ChangeScreen(4,1)">
+		<key id='LEFT' onPress="ChangeScreen(6,-1)"/>
+		<key id='RIGHT' onPress="ChangeScreen(4,1)"/>
+		<textView id="TextView" text="&#248; WELCOME HOME &#294;" font="large" alignment="Center" x="0" y="200" width="480" height="40" backgroundColor="#00000000" textColor="#FFFFFFFF" icoColor="#FFFFFFFF" />
+		<screen id="Grid" type="Grid"   backgroundColor="#00000000" x="0" y="400" width="480" height="250" elementWidth="100" elementHeight="100" verticalOffset="15">
+			<row>
+			<button id="bSettings" onClick="ChangeScreen(4,1)" text="DEV ZONE" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" icoColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFFAAAA" font="small" icoFont="symbol" icoChar="#42"/>
+			<button id="bLiving" onClick="ChangeScreen(7,1)" text="DEV ZONE 2" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" icoColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFFAAAA" font="small" icoFont="symbol" icoChar="#e406"/>
+			</row>
+		</screen>
+	</screen>
+	<screen type="Custom" id="7" backgroundColor="#00000000">
+		<key id='OK' onPress="Beep(500,100,0,1000,100,0)" onRelease="Beep(1000,100,0,500,100,0)"/>
+		<key id='MUTE' onPress="Beep(100,200,0)"/>
+		<key id='BACK' onPress="ChangeScreen(0,-1)"/>
+		<key id='VOLUP' onPress="VolumeUp(5)" onLongPress="VolumeUp(10)" onLongPressRepeat="VolumeUp(10)" />
+		<key id='VOLDOWN' onPress="VolumeDown(5)" onLongPress="VolumeDown(10)" onLongPressRepeat="VolumeDown(10)"/>
+		<header height="70" backgroundColor="#00000000">
+			<button x="0" y="0" height="70" width="50" id="b1" onClick="ChangeScreen(0,-1)" backgroundColor="#00000000" frameColor="#00000000" activeIcoColor="#FFFF3333" icoColor="#FFFFFFFF" icoFont="smallsymbol" icoChar="#Ec34" ></button>
+			<textView text="BACK" font="roboto30" alignment="Center" x="100" y="0" width="280" height="70" backgroundColor="#00000000" textColor="#FFFFFFFF" icoColor="#FFFFFFFF"></textView>
+		</header>
+		<textView text="Dev Zone 2" font="roboto40" alignment="Center" x="0" y="150" width="480" height="40" backgroundColor="#00000000" textColor="#FFFFFFFF" icoColor="#FFFFFFFF" ></textView>
+		<screen id="Grid" type="Grid" backgroundColor="#00000000" x="0" y="300" width="480" height="345" elementWidth="100" elementHeight="100" verticalOffset="15">
+			<row>
+			<button id="b1" text="Show Top" onClick="ShowTopPanel()" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFFAAAA" icoColor="#FFFFFFFF" font="small" icoFont="symbol" icoChar="#E58C" />
+			<button id="b2" text="Show Header" onClick="ShowHeader()" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFFAAAA" icoColor="#FFFFFFFF" font="small" icoFont="symbol" icoChar="#E5AA" />
+			<button id="b3" text="Example" onClick="ChangeScreen(8,1)" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFFAAAA" icoColor="#FFFFFFFF" font="small" icoFont="symbol" icoChar="#EC1D" />
+			</row>
+			<row>
+			<button id="b4" text="Hide Top" onClick="HideTopPanel()" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFFAAAA" icoColor="#FFFFFFFF" font="small" icoFont="symbol" icoChar="#E58D" />
+			<button id="b5" text="Hide Header" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFFAAAA" icoColor="#FFFFFFFF" font="small" icoFont="symbol" icoChar="#E5AB" onClick="HideHeader()" />
+			<button id="b6" text="Beep" onClick="Beep(1000,200,200,1000,200,200,1000,200,200,1000,200,200,1000,200,200)" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFFAAAA" icoColor="#FFFFFFFF" font="small" icoFont="symbol" icoChar="#E373" />
+			</row>
+		</screen>
+	</screen>
+	<screen type="Custom" id="ExtIn" backgroundColor="#00000000" >
+		<key id='LEFT' onPress="ChangeScreen(4,-1)"/>
+		<header height="70" backgroundColor="#00000000">
+			<button x="0" y="0" height="70" width="50" id="b1" onClick="ChangeScreen(4,-1)" backgroundColor="#00000000" frameColor="#00000000" activeIcoColor="#FFFF3333" icoColor="#FFFFFFFF" icoFont="smallsymbol" icoChar="#Ec34"></button>
+			<textView text="BACK" font="roboto30" alignment="Center" x="100" y="0" width="280" height="70" backgroundColor="#00000000" textColor="#FFFFFFFF" icoColor="#FFFFFFFF"></textView>
+		</header>
+		<image id="TestImg" x="190" y="70" />
+		<progressBar id="pb1"  x="0" y="360" width="480" height="40" backgroundColor="#FF505050" progressBarColor="#FFD0D0D0" />
+		<scrollBar image="slider.png" onValueChange="ScrollCallback()" id="sb1" barColor="#FFFFFFFF" x="70" y="490" height="4" width="390" minValue="0" maxValue="100" />
+		<textView id="tv2" text="Progress bar" font="normal" alignment="Center" x="0" y="280" width="480" height="40" backgroundColor="#00000000" textColor="#FFFFFFFF" />
+		<textView id="tv3" text="Slider" font="normal" alignment="Center" x="0" y="435" width="480" height="40" backgroundColor="#00000000" textColor="#FFFFFFFF" />
+		<textView id="tv4" text="SW1" font="normal" alignment="Center" x="75" y="575" width="75" height="40" backgroundColor="#00000000" textColor="#FFFFFFFF" />
+		<textView id="tv4" text="SW2" font="normal" alignment="Center" x="320" y="575" width="75" height="40" backgroundColor="#00000000" textColor="#FFFFFFFF" />
+		<switch image="switch.png" onSwitchON="TestEvent('Switched to ON)" onSwitchOFF="TestEvent('Switched to OFF)" id="sw1" x="75" y="625" />
+		<switch image="switch.png" onSwitchON="TestEvent('Switched to ON)" onSwitchOFF="TestEvent('Switched to OFF)" id="sw2" x="320" y="625" />
+	</screen>
+	<screen type="Custom" id="8" backgroundColor="#00000000">
+		<header height="70" backgroundColor="#00000000">
+			<button x="0" y="0" height="70" width="50" id="b1" onClick="ChangeScreen(7,-1)" backgroundColor="#00000000" frameColor="#00000000" activeIcoColor="#FFFF3333" icoColor="#FFFFFFFF" icoFont="smallsymbol" icoChar="#Ec34"></button>
+			<textView text="BACK" font="roboto30" alignment="Center" x="100" y="0" width="280" height="70" backgroundColor="#00000000" textColor="#FFFFFFFF" icoColor="#FFFFFFFF"></textView>
+		</header>
+		<textView text="External Input" font="roboto40" alignment="Center" x="0" y="100" width="480" height="40" backgroundColor="#00000000" textColor="#FFFFFFFF" icoColor="#FFFFFFFF"></textView>
+		<screen id="Grid" type="Grid" backgroundColor="#00000000" x="0" y="300" width="480" height="345" elementWidth="100" elementHeight="100" verticalOffset="15">
+		</screen>
+	</screen>
+	<screen type="Custom" id="4" collection="2/3" backgroundColor="#00000000" onSlideToLeft="ChangeScreen(0,-1)" onSlideToRight="ChangeScreen(6,1)">
+		<key id='LEFT' onPress="ChangeScreen(0,-1)"/>
+		<key id='RIGHT' onPress="ChangeScreen(6,1)"/>
+		<textView text="Dev Zone" font="roboto40" alignment="Center" x="0" y="150" width="480" height="40" backgroundColor="#00000000" textColor="#FFFFFFFF" icoColor="#FFFFFFFF" />
+		<screen id="Grid" type="Grid"   backgroundColor="#00000000" x="0" y="300" width="480" height="445" elementWidth="100" elementHeight="100" verticalOffset="15">
+			<row>
+			<button id="b1" text="IPv6 TEST" onClick="ChangeScreen(5,1)" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFFAAAA" icoColor="#FFFFFFFF" font="small" icoFont="symbol" icoChar="#E0A7"/>
+			<button id="b2" text="Switch Test" onClick="ChangeScreen(6,1)" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFFAAAA"  icoColor="#FFFFFFFF" font="small" icoFont="symbol" icoChar="#E469"/>
+			<button id="b3" text="PopUp" onClick="ShowPopup('Hello!')" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFFAAAA"  icoColor="#FFFFFFFF" font="small" icoFont="symbol" icoChar="#E12C"/>
+			<button id="b3" text="Ext In" onClick="ChangeScreen('ExtIn',1)" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFFAAAA"  icoColor="#FFFFFFFF" font="small" icoFont="symbol" icoChar="#E0B6"/>
+			</row>
+			<row>
+			<button id="b4" text="List View" onClick="ChangeScreen(3,-1)" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFFAAAA"  icoColor="#FFFFFFFF" font="small" icoFont="symbol" icoChar="#E44C"/>
+			<button id="b5" text="Check updates" onClick="checkFirmware()" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFFAAAA" icoColor="#FFFFFFFF" font="small" icoFont="symbol" icoChar="#E191"/>
+			<button id="b8" text="HOME!" onClick="ChangeScreen(0,-1)" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFFAAAA" icoColor="#FFFFFFFF" font="small" icoFont="symbol" icoChar="#E373" />
+			</row>
+			<row>
+			<button id="b6" text="Update" onClick="UpdateTest()" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFFAAAA" icoColor="#FFFFFFFF" font="small" icoFont="symbol" icoChar="#E1C2"/>
+			<button id="b7" text="Reset" onClick="ResetDevice()" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFFAAAA" icoColor="#FFFFFFFF" font="small" icoFont="symbol" icoChar="#E1C2"/>
+			</row>
+		</screen>
+	</screen>
+	<screen type="Custom" id="5" backgroundColor="#00000000">
+		<header height="70" backgroundColor="#00000000">
+			<button x="0" y="0" height="70" width="50" id="b1" onClick="ChangeScreen(0,-1)" backgroundColor="#00000000" frameColor="#00000000" activeIcoColor="#FFFF3333" icoColor="#FFFFFFFF" icoFont="smallsymbol" icoChar="#Ec34" ></button>
+			<textView text="BACK" font="roboto30" alignment="Center" x="100" y="0" width="280" height="70" backgroundColor="#00000000" textColor="#FFFFFFFF" icoColor="#FFFFFFFF"></textView>
+		</header>
+		<textView id="TextView" text="..." font="roboto40" alignment="Center" x="0" y="100" width="480" height="50" backgroundColor="#FFFFFFFF" textColor="#FF000000" icoColor="#FFFFFFFF" />
+		<screen id="Grid" type="Grid"   backgroundColor="#00000000" x="0" y="200" width="480" height="500" elementWidth="100" elementHeight="100" verticalOffset="15" >
+            <row>
+            <button x="80" y="100" height="100" width="100" id="b0" onClick="UpdateJnFirmware('firmware/jn.bin')" text="Update JN" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFF0000" icoColor="#FFFFFFFF" font="small" icoFont="symbol" icoChar="#E0A7"/>
+            <button x="240" y="100" height="100" width="100" id="b1" onClick="UpdateJnFirmwareLocal('jn.bin')" text="Update JN (local)" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFF0000" icoColor="#FFFFFFFF" font="small" icoFont="symbol" icoChar="#E0A7"/>
+            <button x="400" y="100" height="100" width="100" id="b2" onClick="SendMsgOverIP('Test msg123\n')" text="Send MSG" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFFAAAA" icoColor="#FFFFFFFF" font="small" icoFont="symbol" icoChar="#E0A7"/>
+            </row>
+            <row>
+            <button id="b3" text="Get IPv6" onClick="GetLocalIP()" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFFAAAA" icoColor="#FFFFFFFF" font="small" icoFont="symbol" icoChar="#E0A7" />
+            <button id="b4" text="GET request" onClick="JN_get_request('/resource')" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFFAAAA" icoColor="#FFFFFFFF" font="small" icoFont="symbol" icoChar="#E0A7" />
+            <button id="b4" text="POST request" onClick="JN_post_request('/resource', 'data')" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFFAAAA" icoColor="#FFFFFFFF" font="small" icoFont="symbol" icoChar="#E0A7" />
+            </row>
+			<row>
+            <button id="b4" text="PUT request" onClick="JN_put_request('/resource', 'data')" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFFAAAA" icoColor="#FFFFFFFF" font="small" icoFont="symbol" icoChar="#E0A7" />
+            <button id="b4" text="DELETE request" onClick="JN_delete_request('/resource')" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFFAAAA" icoColor="#FFFFFFFF" font="small" icoFont="symbol" icoChar="#E0A7" />
+            </row>
+		</screen>
+	</screen>
+	<screen type="Custom" id="6" collection="3/3" backgroundColor="#00000000" onSlideToLeft="ChangeScreen(4,-1)" onSlideToRight="ChangeScreen(0,1)">
+		<key id='LEFT' onPress="ChangeScreen(4,-1)"/>
+		<key id='RIGHT' onPress="ChangeScreen(0,1)"/>
+		<button x="200" y="20" height="50" width="100" id="bHome" onClick="ChangeScreen(4,-1)" text="Back to Dev" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" activeIcoColor="#FFFF3333" activeTextColor="#FFFF0000" icoColor="#FFFFFFFF" font="normal"/>
+		<scrollBar image="slider.png" onValueChange="ScrollCallback()" id="sb1" barColor="#FFFFFFFF" x="70" y="200" height="4" width="390" minValue="0" maxValue="100" />
+		<scrollBar image="slider.png" onValueChange="ScrollCallback()" id="sb2" barColor="#FFFFFFFF" x="70" y="345" height="4" width="390" minValue="0" maxValue="100" />
+		<scrollBar image="slider.png" onValueChange="ScrollCallback()" id="sb3" barColor="#FFFFFFFF" x="70" y="490" height="4" width="390" minValue="0" maxValue="100" />
+		<textView id="tv1" text="Floor" font="normal" alignment="Center" x="0" y="140" width="480" height="40" backgroundColor="#00000000" textColor="#FFFFFFFF" />
+		<textView id="tv2" text="Ceiling" font="normal" alignment="Center" x="0" y="280" width="480" height="40" backgroundColor="#00000000" textColor="#FFFFFFFF" />
+		<textView id="tv3" text="Floor" font="normal" alignment="Center" x="0" y="435" width="480" height="40" backgroundColor="#00000000" textColor="#FFFFFFFF" />
+		<textView id="tv4" text="Corner" font="normal" alignment="Center" x="75" y="575" width="75" height="40" backgroundColor="#00000000" textColor="#FFFFFFFF" />
+		<textView id="tv4" text="Estrade" font="normal" alignment="Center" x="320" y="575" width="75" height="40" backgroundColor="#00000000" textColor="#FFFFFFFF" />
+		<switch image="switch.png" onSwitchON="TestEvent('Switched to ON)" onSwitchOFF="TestEvent('Switched to OFF)" id="sw1" x="75" y="625" />
+		<switch image="switch.png" onSwitchON="TestEvent('Switched to ON)" onSwitchOFF="TestEvent('Switched to OFF)" id="sw2" x="320" y="625" />
+	</screen>
+	<screen type="Custom" id="2" backgroundColor="#00000000">
+		<textView text="LIVING ROOM" font="roboto40" alignment="Center" x="0" y="150" width="480" height="40"  backgroundColor="#00000000" textColor="#FFFFFFFF" icoColor="#FFFFFFFF" />
+		<screen id="Grid" type="Grid"   backgroundColor="#00000000" x="0" y="400" width="480" height="345" elementWidth="100" elementHeight="100" verticalOffset="15">
+			<button text="HVAC" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" icoColor="#FFFFFFFF" activeIcoColor="#FFFF3333" font="small" icoFont="symbol" icoChar="#E174"/>
+			<button text="LIGHTS" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" icoColor="#FFFFFFFF" activeIcoColor="#FFFF3333" font="small" icoFont="symbol" icoChar="#E455"/>
+			<button id="bHome" text="HOME" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" icoColor="#FFFFFFFF" activeIcoColor="#FFFF3333" font="small" icoFont="symbol" icoChar="#E3D6"/>
+			<button text="MOVIES" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" icoColor="#FFFFFFFF" activeIcoColor="#FFFF3333" font="small" icoFont="symbol" icoChar="#E0FA"/>
+			<button text="MUSIC" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" icoColor="#FFFFFFFF" activeIcoColor="#FFFF3333" font="small" icoFont="symbol" icoChar="#E45C"/>
+			<button text="TV" backgroundColor="#00000000" frameColor="#00000000" textColor="#FFFFFFFF" icoColor="#FFFFFFFF" activeIcoColor="#FFFF3333" font="small" icoFont="symbol" icoChar="#E3B3"/>
+		</screen>
+	</screen>
+	<screen type='List' id='3' backgroundColor='#00000000' splitLineColor='#ff000000'>
+		<header height="70" backgroundColor="#00000000">
+			<button x="0" y="0" height="70" width="50" id="b1" onClick="ChangeScreen(4,-1)" backgroundColor="#00000000" frameColor="#00000000" activeIcoColor="#FFFF3333" icoColor="#FFFFFFFF" icoFont="smallsymbol" icoChar="#Ec34"></button>
+			<textView text="BACK" font="roboto30" alignment="Center" x="100" y="0" width="280" height="70" backgroundColor="#00000000" textColor="#FFFFFFFF" icoColor="#FFFFFFFF"></textView>
+		</header>
+		<listItem backgroundColor="#ffffffff" textColor="#FF404040" activeBackgroundColor="#FFD3D3D3" type="Dots" height="110" text="Music!" font="normal" onClick="ChangeScreen(StaticList,1)" />
+		<listItem backgroundColor='#ffffffff' textColor="#FF404040" activeBackgroundColor='#FFD3D3D3' type='Dots' height='110' text='Clear List' font='normal' onClick="ClearList()"/>
+		<listItem backgroundColor="#ffffffff" textColor="#FF404040" activeBackgroundColor="#FFD3D3D3" type="Dots" height="110" text="Load list 1" font="normal" onClick="LoadList(1)"/>
+		<listItem backgroundColor="#ffffffff" textColor="#FF404040" activeBackgroundColor="#FFD3D3D3" type="Dots" height="110" text="Load list 2" font="normal" onClick="LoadList(2)"/>
+		<listItem backgroundColor="#ffffffff" textColor="#FF404040" activeBackgroundColor="#FFD3D3D3" type="Dots" height="110" text="Show List" font="normal" onClick="ChangeScreen(DynamicList,1)"/>
+	</screen>
+	<screen type="List" id="DynamicList" backgroundColor="#00000000" splitLineColor="#ff000000" overscrollEnabled="true" overscrollColor="#FFFF8833" overscrollHeight="50">
+		<header height="70" backgroundColor="#00000000">
+			<button x="0" y="0" height="70" width="50" id="b1" onClick="ChangeScreen(3,-1)" backgroundColor="#00000000" frameColor="#00000000" activeIcoColor="#FFFF3333" icoColor="#FFFFFFFF" icoFont="smallsymbol" icoChar="#Ec34"></button>
+			<textView text="BACK" font="roboto30" alignment="Center" x="100" y="0" width="280" height="70" backgroundColor="#00000000" textColor="#FFFFFFFF" icoColor="#FFFFFFFF"></textView>
+		</header>
+		<listItem backgroundColor="#ffffffff" textColor="#FF404040" activeBackgroundColor="#FFD3D3D3" type="Dots" height="110" text="First Item" font="normal" id="first" />
+	</screen>
+	<screen type="List" id="StaticList" backgroundColor="#00000000" splitLineColor="#FF000000" overscrollEnabled="true" overscrollColor="#FF3388FF" overscrollHeight="50">
+		<header height="70" backgroundColor="#00000000">
+			<button x="0" y="0" height="70" width="50" id="b1" onClick="ChangeScreen(3,-1)" backgroundColor="#00000000" frameColor="#00000000" activeIcoColor="#FFFF3333" icoColor="#FFFFFFFF" icoFont="smallsymbol" icoChar="#Ec34"></button>
+			<textView text="BACK" font="roboto30" alignment="Center" x="100" y="0" width="280" height="70" backgroundColor="#00000000" textColor="#FFFFFFFF" icoColor="#FFFFFFFF"></textView>
+		</header>
+	</screen>
+	<font-styles>
+		<font-style name="small" file="Roboto-Black.ttf" size="16"/>
+		<font-style name="normal" file="Roboto-Black.ttf" size="24"/>
+		<font-style name="large" file="Roboto-Black.ttf" size="32"/>
+		<font-style name="roboto30" file="Roboto-Black.ttf" size="30"/>
+		<font-style name="roboto40" file="Roboto-Black.ttf" size="40"/>
+		<font-style name="roboto48" file="Roboto-Black.ttf" size="48"/>
+		<font-style name="symbol" file="streamline-30px-all.ttf" size="58"/>
+		<font-style name="smallsymbol" file="streamline-30px-all.ttf" size="30"/>
+	</font-styles>
+</doc>

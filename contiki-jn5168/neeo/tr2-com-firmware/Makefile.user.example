@@ -1,0 +1,15 @@
+ifndef USER_MAKE_CONFIG
+    export USER_MAKE_CONFIG
+
+    # Set variables BA_GCC_PATH and JN_SDK_PATH to the appropriate compiler and Jennic SDK.
+
+    BA_GCC_PATH := /path/to/toolchain/ba-elf/bin
+    JN_SDK_PATH := /path/to/sdk/jn516x-sdk/JN-SW-4163
+
+    # Optionally set the DESTINATION_FILE for deploy operation.
+
+    DESTINATION_FILE ?= /path/to/tr-2/neeo/romfs/jn.bin
+
+    export PATH := $(BA_GCC_PATH):$(PATH)
+    export SDK_BASE_DIR := $(JN_SDK_PATH)
+endif

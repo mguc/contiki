@@ -1,0 +1,2 @@
+#define GIT_COMMIT ""
+

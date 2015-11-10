@@ -1,0 +1,12 @@
+ifndef USER_MAKE_CONFIG
+    export USER_MAKE_CONFIG
+
+    # Set variable ARM_GCC_PATH to the appropriate compiler.
+
+    ARM_GCC_PATH := /path/to/toolchain/arm-linux-gnueabihf/bin
+    CROSS_COMPILER := arm-linux-gnueabihf-
+    TARGET_IP := 127.0.0.1
+    TARGET_PATH := /path/to/nbr/on/target
+
+    export PATH := $(ARM_GCC_PATH):$(PATH)
+endif

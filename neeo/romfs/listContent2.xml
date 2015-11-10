@@ -1,0 +1,3 @@
+<listContent>
+	<listItem backgroundColor='#ffffffff' textColor="#FF00A000" activeBackgroundColor='#FFD3D3D3' type='StdListField' height='110' text='Element from the second XML' font='normal'/>
+</listContent>

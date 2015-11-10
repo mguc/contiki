@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doc>
+<popupStyle id="start" x="0" y="220" height="260" width="480" backgroundColor="#ffFFFFFF" >
+	<button x="190" y="10" height="80" width="100" id="b1" backgroundColor="#FFFFFFFF" frameColor="#00000000" icoColor="#FF808080" icoFont="symbol" icoChar="#E054"></button>
+	<message font="large" alignment="Center" x="10" y="100" width="460" height="70" backgroundColor="#00000000" textColor="#FF808080" icoColor="#FF808080"></message>
+	<button x="0" y="180" height="100" width="480" id="bCancel" text="Cancel" onClick="JNPairingCancel()" backgroundColor="#FF808080" textColor="#FFFFFFFF" font="large" />
+</popupStyle>
+<screen type="Custom" id="start" backgroundColor="#00000000">
+	<textView text="NEEO Welcome screen" font="normal" alignment="Center" x="0" y="100" width="480" height="40" backgroundColor="#00000000" textColor="#FFFFFFFF" icoColor="#FFFFFFFF" />
+    <button x="0" y="200" height="100" width="480" id="b1" onClick="JN_init_pairing_button()" text="Pair with Brain" backgroundColor="#FFFFFFFF" activeBackgroundColor="#FFAAAAAA" frameColor="#00000000" textColor="#FF000000" />
+    <button x="0" y="350" height="100" width="480" id="b2" onClick="FallBack()" text="Offline" backgroundColor="#FFFFFFFF" activeBackgroundColor="#FFAAAAAA" frameColor="#00000000" textColor="#FF000000" />
+</screen>
+<screen type="List" id="CP6List" backgroundColor="#00000000" splitLineColor="#ff000000" overscrollEnabled="true" overscrollColor="#FFFF8833" overscrollHeight="50">
+	<header height="70" backgroundColor="#00000000">
+		<button x="0" y="0" height="70" width="240" id="b1" onClick="ChangeScreen(start,-1)" backgroundColor="#00000000" frameColor="#00000000" activeIcoColor="#FFFF3333" icoColor="#FFFFFFFF" icoFont="smallsymbol" icoChar="#Ec34"></button>
+		<button x="240" y="0" height="70" width="240" id="b1" onClick="JN_init_pairing_button()" backgroundColor="#00000000" frameColor="#00000000" activeTextColor="#FFFF3333" textColor="#FFFFFFFF" text="REFRESH"></button>
+	</header>
+	<listItem backgroundColor="#ffffffff" textColor="#FF404040" activeBackgroundColor="#FFD3D3D3" type="Dots" height="110" text="First Item" font="normal" id="first" />
+</screen>
+<font-styles>
+	<font-style name="normal" file="Roboto-Black.ttf" size="24"/>
+	<font-style name="large" file="Roboto-Black.ttf" size="32"/>
+	<font-style name="small" file="Roboto-Black.ttf" size="18"/>
+	<font-style name="symbol" file="streamline-30px-all.ttf" size="58"/>
+	<font-style name="smallsymbol" file="streamline-30px-all.ttf" size="30" />
+</font-styles>
+</doc>
