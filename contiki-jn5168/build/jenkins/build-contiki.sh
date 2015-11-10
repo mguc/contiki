@@ -5,7 +5,7 @@ set -e
 HERE=$(dirname $0)
 
 echo ----- DOCKER build TR2 $(pwd)
-pushd build/docker/builder/
+pushd contiki-jn5168/build/docker/builder/
 docker build -t tr2contiki .
 popd
 
