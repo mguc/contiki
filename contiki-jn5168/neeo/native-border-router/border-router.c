@@ -202,7 +202,7 @@ print_local_addresses(void)
       uip_debug_ipaddr_print(&(uip_ds6_if.addr_list[i]).ipaddr);
       PRINTA("\n");
       if(state == ADDR_PREFERRED &&
-         !uip_is_addr_link_local(&uip_ds6_if.addr_list[i].ipaddr)) {
+         !uip_is_addr_linklocal(&uip_ds6_if.addr_list[i].ipaddr)) {
         global_ipaddr = &uip_ds6_if.addr_list[i].ipaddr;
       }
     }

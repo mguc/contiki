@@ -20,4 +20,4 @@ docker run --rm -a stdin -a stdout -a stderr -v $(pwd)/dist:/out -v $(pwd):/sour
 docker run --rm -a stdin -a stdout -a stderr -v $(pwd)/dist:/out -v $(pwd):/source tr2contiki bash -c 'cd /source/neeo/slip-radio && PATH=$PATH:/builder/bin make distclean all && cp ./slip-radio.jn516x.bin /out/jn516x-cp6.bin'
 
 # build cp6 NBR binary
-#docker run --rm -a stdin -a stdout -a stderr -v $(pwd)/dist:/out -v $(pwd):/source tr2contiki bash -c 'cd /source/neeo/native-border-router && TARGET=native CROSS_COMPILE=arm-linux-gnueabihf- make distclean all && cp ./border-router.native /out'
+docker run --rm -a stdin -a stdout -a stderr -v $(pwd)/dist:/out -v $(pwd):/source tr2contiki bash -c 'cd /source/neeo/native-border-router && TARGET=native CROSS_COMPILE=arm-linux-gnueabihf- make distclean all && cp ./border-router.native /out'
