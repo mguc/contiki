@@ -1,0 +1,9 @@
+*.bin
+*.map
+*.a
+obj_*/
+*.jn5168
+border-router.native
+symbols.c
+symbols.h
+doc/html/
