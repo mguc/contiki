@@ -221,7 +221,7 @@ PROCESS_THREAD(coap_process, ev, data)
       INFOT("Payload(%u): %s\n", strlen(query.payload), query.payload);
 
       if(ptrMsg->type == T_REST_GET) {
-        coap_init_message(request, COAP_TYPE_NON, COAP_GET, 0);
+        coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
         INFOT("GET URI: %s\n", query.uri);
       }
       else if(ptrMsg->type == T_REST_POST)
@@ -238,14 +238,22 @@ PROCESS_THREAD(coap_process, ev, data)
       {
         coap_init_message(request, COAP_TYPE_CON, COAP_DELETE, 0);
       }
-      coap_set_header_uri_path(request, query.uri);
-      coap_set_header_block2(request, 0, 0, 64);
-      COAP_BLOCKING_REQUEST(&brain_address, BRAIN_COAP_PORT, request, coap_chunk_handler);
-      msg_coap_ack.id = query.id;
-      msg_coap_ack.type = query.type;
-      msg_coap_ack.len = query.dataLen;
-      msg_coap_ack.data = query.data;
-      INFOT("Response status: %u", query.status);
+      if(ptrMsg->type == T_TRIGGER_ACTION){
+    	  coap_init_message(request, COAP_TYPE_NON, COAP_GET, 0);
+    	  coap_set_header_uri_path(request, query.uri);
+    	  coap_set_header_block2(request, 0, 0, 64);
+    	  coap_new_transaction(request->mid, &brain_address, BRAIN_COAP_PORT);
+      }
+      else {
+    	  coap_set_header_uri_path(request, query.uri);
+    	  coap_set_header_block2(request, 0, 0, 64);
+    	  COAP_BLOCKING_REQUEST(&brain_address, BRAIN_COAP_PORT, request, coap_chunk_handler);
+    	  msg_coap_ack.id = query.id;
+    	  msg_coap_ack.type = query.type;
+    	  msg_coap_ack.len = query.dataLen;
+    	  msg_coap_ack.data = query.data;
+    	  INFOT("Response status: %u", query.status);
+      }
       send_msg(&msg_coap_ack);
     }
   }

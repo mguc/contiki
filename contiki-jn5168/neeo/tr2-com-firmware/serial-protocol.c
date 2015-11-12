@@ -243,6 +243,7 @@ PROCESS_THREAD(serial_parser_process, ev, data)
         case T_REST_POST:
         case T_REST_PUT:
         case T_REST_DELETE:
+        case T_TRIGGER_ACTION:
           process_post_synch(&coap_process, PROCESS_EVENT_MSG, &msg);
           break;
         default:
