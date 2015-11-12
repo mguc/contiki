@@ -52,7 +52,7 @@
 #endif
 
 #ifndef MICROMAC_CONF_CHANNEL
-#define MICROMAC_CONF_CHANNEL 26
+#define MICROMAC_CONF_CHANNEL 14
 #endif
 
 #ifdef RF_CHANNEL

@@ -221,7 +221,7 @@ PROCESS_THREAD(coap_process, ev, data)
       INFOT("Payload(%u): %s\n", strlen(query.payload), query.payload);
 
       if(ptrMsg->type == T_REST_GET) {
-        coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
+        coap_init_message(request, COAP_TYPE_NON, COAP_GET, 0);
         INFOT("GET URI: %s\n", query.uri);
       }
       else if(ptrMsg->type == T_REST_POST)
