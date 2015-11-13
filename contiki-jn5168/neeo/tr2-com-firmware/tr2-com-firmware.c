@@ -242,7 +242,12 @@ PROCESS_THREAD(coap_process, ev, data)
     	  coap_init_message(request, COAP_TYPE_NON, COAP_GET, 0);
     	  coap_set_header_uri_path(request, query.uri);
     	  coap_set_header_block2(request, 0, 0, 64);
-    	  coap_send_transaction(coap_new_transaction(request->mid, &brain_address, BRAIN_COAP_PORT));
+    	  request->mid = coap_get_mid();
+    	  coap_transaction_t *tmpTransaction =  coap_new_transaction(request->mid, &brain_address, BRAIN_COAP_PORT);
+    	  if(tmpTransaction) {
+    		  tmpTransaction->packet_len = coap_serialize_message(request, tmpTransaction->packet);
+    		  coap_send_transaction(tmpTransaction);
+    	  }
       }
       else {
     	  coap_set_header_uri_path(request, query.uri);
