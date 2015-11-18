@@ -106,7 +106,7 @@ packet_sent(void *ptr, int status, int transmissions)
 static int
 slip_radio_cmd_handler(const uint8_t *data, int len)
 {
-  int i;
+  int i=0;
   if(data[0] == '!') {
     /* should send out stuff to the radio - ignore it as IP */
     /* --- s e n d --- */
