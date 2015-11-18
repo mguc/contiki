@@ -5,7 +5,7 @@
 #include "lib/ringbuf.h"
 #include "serial-protocol.h"
 #include "tr2-common.h"
-#define DEBUG_LEVEL DEBUG_ALL
+#define DEBUG_LEVEL DEBUG_NONE
 #include "log_helper.h"
 
 #define SWAP_BYTES16(__x) ((((__x) & 0xff) << 8) | ((__x) >> 8))
@@ -64,7 +64,7 @@ uint8_t
 crc8_update(uint16_t crc, uint8_t data)
 {
   int i;
-  
+
   crc <<= 8;
   crc ^= (data << 8);
   for(i = 8; i; i--) {

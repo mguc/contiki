@@ -39,7 +39,7 @@
 #define IEEE802154_CONF_PANID 0xabcd
 
 #undef RF_CHANNEL
-#define RF_CHANNEL 26
+#define RF_CHANNEL 16
 
 /* CoAP configuration */
 #define REST_MAX_CHUNK_SIZE     80

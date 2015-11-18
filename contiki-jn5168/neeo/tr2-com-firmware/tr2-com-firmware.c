@@ -17,7 +17,7 @@
 /*---------------------------------------------------------------------------*/
 #define BRAIN_PORT        3100
 #define BRAIN_COAP_PORT   3901
-#define FW_MAJOR_VERSION    "11"
+#define FW_MAJOR_VERSION    "12"
 #define QUERY_TIMEOUT_MAX 30
 #define QUERY_STATE_URI_LEN  128
 #define QUERY_STATE_PAYLOAD_LEN  256
