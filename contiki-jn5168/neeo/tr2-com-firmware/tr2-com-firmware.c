@@ -12,14 +12,14 @@
 #include "rtc.h"
 #include "er-coap-engine.h"
 
-#define DEBUG_LEVEL DEBUG_ALL
+#define DEBUG_LEVEL DEBUG_NONE
 #include "log_helper.h"
 /*---------------------------------------------------------------------------*/
 #define BRAIN_PORT        3100
 #define BRAIN_COAP_PORT   3901
 #define FW_MAJOR_VERSION    "11"
 #define QUERY_TIMEOUT_MAX 30
-#define QUERY_STATE_URI_LEN  256
+#define QUERY_STATE_URI_LEN  128
 #define QUERY_STATE_PAYLOAD_LEN  256
 #define QUERY_STATE_DATA_BUF_LEN  512
 /*---------------------------------------------------------------------------*/
@@ -275,7 +275,7 @@ PROCESS_THREAD(config_process, ev, data)
   uint32_t addr_buf_len = 48;
   radio_value_t rssi_val = 0;
   int ret;
-  
+
   PROCESS_BEGIN();
   INFOT("INIT: Starting config process\n");
   etimer_set(&et, CLOCK_SECOND);
@@ -427,7 +427,7 @@ PROCESS_THREAD(discover_process, ev, data)
       msg_ptr = (msg_t*)data;
       msg_buf.type = msg_ptr->type;
       msg_buf.id = msg_ptr->id;
-      
+
       for(nbr = nbr_table_head(ds6_neighbors);
           nbr != NULL;
           nbr = nbr_table_next(ds6_neighbors, nbr)) {
