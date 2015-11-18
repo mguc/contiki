@@ -16,7 +16,7 @@
 
 #define MAX_PAYLOAD_LENGTH 2048
 
-#define DEFAULT_REPEAT_COUNT 50
+#define DEFAULT_REPEAT_COUNT 80
 
 typedef struct {
     uint32_t period;
@@ -36,7 +36,7 @@ volatile static uint16_t currentRepetition = 0;
 volatile static uint32_t currentPeriod = 0;
 /*---------------------------------------------------------------------------*/
 static inline void
-ir_stop_internal(void) 
+ir_stop_internal(void)
 {
     vAHI_TimerStop(E_AHI_TIMER_2);
     vAHI_TimerStop(E_AHI_TIMER_3);
@@ -99,7 +99,7 @@ timer3_callback(uint32_t u32DeviceId, uint32_t u32ItemBitmap)
 }
 /*---------------------------------------------------------------------------*/
 void
-startTransmission(void) 
+startTransmission(void)
 {
     currentVal = 1;
     sequence_index = 0;
@@ -173,7 +173,7 @@ ir_start(const uint16_t *data, uint32_t len)
     for(i = 0; i < (len / 2) - 6; i++) {
         ir_sequence.sequence[i] = data[i + 6];
     }
-    
+
     if(i < 2) {
         PRINTF("IR:ERR Less than 2 data in sequence! Sequence length: %u\n", i);
         ret = 6;
