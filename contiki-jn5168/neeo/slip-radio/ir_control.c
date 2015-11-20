@@ -16,7 +16,7 @@
 
 #define MAX_PAYLOAD_LENGTH 2048
 
-#define DEFAULT_REPEAT_COUNT 80
+#define DEFAULT_REPEAT_COUNT 150
 
 typedef struct {
     uint32_t period;
