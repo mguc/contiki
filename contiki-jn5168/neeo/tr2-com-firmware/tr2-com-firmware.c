@@ -239,6 +239,7 @@ PROCESS_THREAD(coap_process, ev, data)
         coap_init_message(request, COAP_TYPE_CON, COAP_DELETE, 0);
       }
       if(ptrMsg->type == T_TRIGGER_ACTION){
+        //send non confirmable message
     	  coap_init_message(request, COAP_TYPE_NON, COAP_GET, 0);
     	  coap_set_header_uri_path(request, query.uri);
     	  coap_set_header_block2(request, 0, 0, 64);
@@ -250,8 +251,15 @@ PROCESS_THREAD(coap_process, ev, data)
     	  }
       }
       else {
+        //send confirmable message - make sure we include a token as the answer of the server is returned
+        //as a separate message (not piggybacked).
     	  coap_set_header_uri_path(request, query.uri);
     	  coap_set_header_block2(request, 0, 0, 64);
+        unsigned int random = random_rand();
+        unsigned char token[2];
+        token[0] = random & 0xff;
+        token[1] = (random>>8) & 0xff;
+        coap_set_token(request, token, 2);
     	  COAP_BLOCKING_REQUEST(&brain_address, BRAIN_COAP_PORT, request, coap_chunk_handler);
     	  msg_coap_ack.id = query.id;
     	  msg_coap_ack.type = query.type;
