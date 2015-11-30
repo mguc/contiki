@@ -15,6 +15,7 @@
 #define T_REST_POST       0x12
 #define T_REST_PUT        0x13
 #define T_REST_DELETE     0x14
+#define T_TRIGGER_ACTION  0x15
 #define T_ERROR_RESPONSE  0xEE
 
 typedef struct  msg_s {

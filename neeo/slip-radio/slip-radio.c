@@ -107,7 +107,7 @@ packet_sent(void *ptr, int status, int transmissions)
 static int
 slip_radio_cmd_handler(const uint8_t *data, int len)
 {
-  int i;
+  int i = 0;
   if(data[0] == '!') {
     /* should send out stuff to the radio - ignore it as IP */
     /* --- s e n d --- */
@@ -273,6 +273,7 @@ PROCESS_THREAD(slip_radio_process, ev, data)
   printf("Slip Radio started...\n");
 
   etimer_set(&et, CLOCK_SECOND * 3);
+  led_blink(LED_MODE_OFF);
   led_blink(LED_MODE_BLINK_500);
 
   while(1) {

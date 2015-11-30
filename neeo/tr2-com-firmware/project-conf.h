@@ -10,6 +10,12 @@
 #undef NETSTACK_CONF_RDC
 #undef NETSTACK_CONF_FRAMER
 
+// The difference between nullrdc and contikimac is the way of accessing the medium (radio). Nullrdc keeps the radio turned on in RX mode
+// all the time and listen all activity on the radio. Of course during transmission the radio is switched to TX mode.
+// The contikimac keeps the radio turned off most of the time. CPU wakes-up the radio periodically and listen if there is any activity.
+// During transmission, radio starts TX only if there is a silence in the air.
+// This differences results in different power consumption (radio in RX mode consumes more power than in TX mode).
+
 #if MAC_CONFIG == MAC_CONFIG_NULLRDC
 
 #define NETSTACK_CONF_MAC     csma_driver
@@ -39,7 +45,7 @@
 #define IEEE802154_CONF_PANID 0xabcd
 
 #undef RF_CHANNEL
-#define RF_CHANNEL 26
+#define RF_CHANNEL 16
 
 /* CoAP configuration */
 #define REST_MAX_CHUNK_SIZE     80

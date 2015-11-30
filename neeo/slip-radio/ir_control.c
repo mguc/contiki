@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <AppHardwareApi.h>
 #include <PeripheralRegs.h>
+#include <MicroSpecific.h>
 #include "common-defs.h"
 
 #define DEBUG 1
@@ -15,7 +16,7 @@
 #define SEQ_STATE_PENDING   0x01
 #define SEQ_STATE_SENT      0x02
 
-#define DEFAULT_REPEAT_COUNT 50
+#define DEFAULT_REPEAT_COUNT 150
 #define IR_CONTROL_BUF_MAX_SIZE     (COMMON_BUFFER_SIZE/2)
 
 typedef struct {
@@ -36,7 +37,7 @@ volatile static uint16_t currentRepetition = 0;
 volatile static uint32_t currentPeriod = 0;
 /*---------------------------------------------------------------------------*/
 static inline void
-ir_stop_internal(void) 
+ir_stop_internal(void)
 {
     vAHI_TimerStop(E_AHI_TIMER_2);
     vAHI_TimerStop(E_AHI_TIMER_3);
@@ -99,7 +100,7 @@ timer3_callback(uint32_t u32DeviceId, uint32_t u32ItemBitmap)
 }
 /*---------------------------------------------------------------------------*/
 void
-startTransmission(void) 
+startTransmission(void)
 {
     currentVal = 1;
     sequence_index = 0;
@@ -112,6 +113,8 @@ startTransmission(void)
 void
 ir_init(void)
 {
+    vAHI_InterruptSetPriority(MICRO_ISR_MASK_TMR2, 15);
+    vAHI_InterruptSetPriority(MICRO_ISR_MASK_TMR3, 15);
     // Set timer location DO0 and DO1
     vAHI_TimerSetLocation(E_AHI_TIMER_2, FALSE, TRUE);
     // Configure Timer 2 as PWM
@@ -146,7 +149,8 @@ ir_start(const uint16_t *data, uint32_t len)
 
     freq = data[2];
     freq |= (data[3] << 16);
-    if(freq < 10000 || freq > 500000) {
+    //sanity check, if frequency is lower than 20kHz the BRAIN could consume too much current and potentially crash the whole system!
+    if(freq < 20000 || freq > 500000) {
         PRINTF("IR:ERR Bad frequency value! (%lu)\n", freq);
         ret = 3;
         goto cleanup;
@@ -174,7 +178,7 @@ ir_start(const uint16_t *data, uint32_t len)
     for(i = 0; i < (len / 2) - 6; i++) {
         ir_sequence.sequence[i] = data[i + 6];
     }
-    
+
     if(i < 2) {
         PRINTF("IR:ERR Less than 2 data in sequence! Sequence length: %u\n", i);
         ret = 6;

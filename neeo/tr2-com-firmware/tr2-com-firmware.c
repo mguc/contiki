@@ -12,13 +12,13 @@
 #include "rtc.h"
 #include "er-coap-engine.h"
 
-#define DEBUG_LEVEL DEBUG_ALL
+#define DEBUG_LEVEL DEBUG_NONE
 #include "log_helper.h"
 /*---------------------------------------------------------------------------*/
 #define BRAIN_PORT        3100
 #define BRAIN_COAP_PORT   3901
-#define FW_MAJOR_VERSION    "11"
-#define QUERY_TIMEOUT_MAX 30
+#define FW_MAJOR_VERSION    "15"
+
 #define QUERY_STATE_URI_LEN  256
 #define QUERY_STATE_PAYLOAD_LEN  256
 #define QUERY_STATE_DATA_BUF_LEN  512
@@ -238,15 +238,36 @@ PROCESS_THREAD(coap_process, ev, data)
       {
         coap_init_message(request, COAP_TYPE_CON, COAP_DELETE, 0);
       }
-      coap_set_header_uri_path(request, query.uri);
-      coap_set_header_block2(request, 0, 0, 64);
-      COAP_BLOCKING_REQUEST(&brain_address, BRAIN_COAP_PORT, request, coap_chunk_handler);
-      INFOT("CoAP request finished!!!!!!!!!\n");
-      msg_coap_ack.id = query.id;
-      msg_coap_ack.type = query.type;
-      msg_coap_ack.len = query.dataLen;
-      msg_coap_ack.data = query.data;
-      INFOT("Response status: %u\n", query.status);
+
+      if(ptrMsg->type == T_TRIGGER_ACTION){
+        //send non confirmable message
+        coap_init_message(request, COAP_TYPE_NON, COAP_GET, 0);
+        coap_set_header_uri_path(request, query.uri);
+        coap_set_header_block2(request, 0, 0, 64);
+        request->mid = coap_get_mid();
+        coap_transaction_t *tmpTransaction =  coap_new_transaction(request->mid, &brain_address, BRAIN_COAP_PORT);
+        if(tmpTransaction) {
+          tmpTransaction->packet_len = coap_serialize_message(request, tmpTransaction->packet);
+          coap_send_transaction(tmpTransaction);
+        }
+      }
+      else {
+        //send confirmable message - make sure we include a token as the answer of the server is returned
+        //as a separate message (not piggybacked).
+        coap_set_header_uri_path(request, query.uri);
+        coap_set_header_block2(request, 0, 0, 64);
+        unsigned int random = random_rand();
+        unsigned char token[2];
+        token[0] = random & 0xff;
+        token[1] = (random>>8) & 0xff;
+        coap_set_token(request, token, 2);
+        COAP_BLOCKING_REQUEST(&brain_address, BRAIN_COAP_PORT, request, coap_chunk_handler);
+        msg_coap_ack.id = query.id;
+        msg_coap_ack.type = query.type;
+        msg_coap_ack.len = query.dataLen;
+        msg_coap_ack.data = query.data;
+        INFOT("Response status: %u", query.status);
+      }
       send_msg(&msg_coap_ack);
     }
   }
