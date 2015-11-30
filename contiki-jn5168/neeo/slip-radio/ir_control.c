@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <AppHardwareApi.h>
 #include <PeripheralRegs.h>
+#include <MicroSpecific.h>
 
 #define DEBUG 1
 #include "net/ip/uip-debug.h"
@@ -112,6 +113,8 @@ startTransmission(void)
 void
 ir_init(void)
 {
+	vAHI_InterruptSetPriority(MICRO_ISR_MASK_TMR2, 15);
+	vAHI_InterruptSetPriority(MICRO_ISR_MASK_TMR3, 15);
     // Set timer location DO0 and DO1
     vAHI_TimerSetLocation(E_AHI_TIMER_2, FALSE, TRUE);
     // Configure Timer 2 as PWM
