@@ -145,7 +145,8 @@ ir_start(const uint16_t *data, uint32_t len)
 
     freq = data[2];
     freq |= (data[3] << 16);
-    if(freq < 10000 || freq > 500000) {
+    //sanity check, if frequency is lower than 20kHz the BRAIN could consume too much current and potentially crash the whole system!
+    if(freq < 20000 || freq > 500000) {
         PRINTF("IR:ERR Bad frequency value! (%lu)\n", freq);
         ret = 3;
         goto cleanup;
