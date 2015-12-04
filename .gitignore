@@ -43,7 +43,6 @@ doc/html
 patches-*
 tools/tunslip
 tools/tunslip6
-build
 tools/coffee-manager/build/
 tools/cooja/dist/
 tools/collect-view/build/
