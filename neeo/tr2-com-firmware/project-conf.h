@@ -51,6 +51,8 @@
 #define REST_MAX_CHUNK_SIZE     80
 #define COAP_MAX_HEADER_SIZE    176
 
+#define RPL_DIS_INTERVAL_CONF 1
+
 /* default COAP_RESPONSE_TIMEOUT is 3 */
 #define COAP_RESPONSE_TIMEOUT       2
 
