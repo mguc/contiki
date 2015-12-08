@@ -9,8 +9,7 @@
 *.ihex
 *.pyc
 *.redbee-econotag
-*.econotag 
-*.native
+*.econotag
 *.z1
 *.minimal-net
 *.sky
@@ -26,7 +25,6 @@
 *.c64
 *.cc2538dk
 *.remote
-*.jn516x
 *.srf06-cc26xx
 *.ev-aducrf101mkxz
 *.report
@@ -93,3 +91,9 @@ contiki-cc2530dk.lib
 # rl78 build artifacts
 *.eval-adf7xxxmb4z
 *.eval-adf7xxxmb4z.srec
+
+*codeprop-tmp
+/dist
+neeo/slip-radio/slip-radio.jn516x
+neeo/tr2-com-firmware/tr2-com-firmware.jn516x
+neeo/native-border-router/border-router.native
