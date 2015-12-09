@@ -524,7 +524,7 @@ PT_THREAD(send_data(connection_state_t* conn_state))
   index = 0;
   response = &conn_state->response;
   header = response->headers;
-  buffer = allocate_buffer(200);
+  buffer = allocate_buffer(10000);
 
   /*FIXME: what is the best solution here to send the data. Right now, if buffer is not allocated, no data is sent!*/
   if (buffer) {
