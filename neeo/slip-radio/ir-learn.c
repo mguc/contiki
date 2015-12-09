@@ -15,7 +15,7 @@
 #define STATE_READY             3
 #define STATE_NOTIFIED          4
 
-#define IR_MOD_COMB             3
+#define IR_MOD_COMB             8
 #define IR_MOD_COMB_INT         E_AHI_DIO8_INT
 #define IR_LEARN_BUF_MAX_SIZE     (COMMON_BUFFER_SIZE/4)
 /*---------------------------------------------------------------------------*/
