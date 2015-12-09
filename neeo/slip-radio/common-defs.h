@@ -2,7 +2,7 @@
 #define COMMON_DEFS_H
 
 
-#define COMMON_BUFFER_SIZE  8192
+#define COMMON_BUFFER_SIZE  9216
 
 extern uint8_t ir_common_buffer[];
 
