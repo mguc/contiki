@@ -16,6 +16,7 @@
 #define STATE_NOTIFIED          4
 
 #define IR_MOD_COMB             8
+#define IR_MOD_COMB_2			16
 #define IR_MOD_COMB_INT         E_AHI_DIO8_INT
 #define IR_LEARN_BUF_MAX_SIZE     (COMMON_BUFFER_SIZE/4)
 /*---------------------------------------------------------------------------*/
@@ -128,7 +129,7 @@ ir_learn_init(void)
   max_samples = 0;
 
   vAHI_SysCtrlRegisterCallback(dio_int_callback);
-  vAHI_DioSetDirection((1<<IR_MOD_COMB) | (1<<0), 0);
+  vAHI_DioSetDirection((1<<IR_MOD_COMB) | (1<<IR_MOD_COMB_2) | (1<<0), 0);
   vAHI_DioInterruptEdge((1<<IR_MOD_COMB), 0);
   vAHI_DioInterruptEnable((1<<IR_MOD_COMB), 0);
   sequence = (uint32_t*)ir_common_buffer;

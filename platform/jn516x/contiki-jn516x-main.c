@@ -309,8 +309,8 @@ main(void)
 #endif
 
   watchdog_init();
-  leds_init();
-  leds_on(LEDS_ALL);
+//  leds_init();
+//  leds_on(LEDS_ALL);
   init_node_mac();
 
   energest_init();
