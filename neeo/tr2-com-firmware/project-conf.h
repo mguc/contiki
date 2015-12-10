@@ -47,6 +47,9 @@
 #undef RF_CHANNEL
 #define RF_CHANNEL 16
 
+#undef   MICROMAC_CONF_CHANNEL
+#define  MICROMAC_CONF_CHANNEL  RF_CHANNEL
+
 /* CoAP configuration */
 #define REST_MAX_CHUNK_SIZE     80
 #define COAP_MAX_HEADER_SIZE    176
