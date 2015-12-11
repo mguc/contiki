@@ -11,6 +11,7 @@
 #include "tr2-common.h"
 #include "rtc.h"
 #include "er-coap-engine.h"
+#include "rest_server.h"
 
 #define DEBUG_LEVEL DEBUG_NONE
 #include "log_helper.h"
@@ -126,7 +127,7 @@ PROCESS_THREAD(query_process, ev, data)
 
   process_start(&config_process, NULL);
   process_start(&serial_parser_process, NULL);
-  // process_start(&rest_server_process, NULL);
+  process_start(&rest_server_process, NULL);
   process_start(&discover_process, NULL);
   process_start(&coap_process, NULL);
 

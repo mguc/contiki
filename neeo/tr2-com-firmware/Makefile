@@ -35,6 +35,7 @@ CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\" -fsigned-char
 
 PROJECT_SOURCEFILES += serial-protocol.c
 PROJECT_SOURCEFILES += rtc.c
+PROJECT_SOURCEFILES += rest_server.c
 
 CONTIKI_WITH_IPV6 = 1
 include $(CONTIKI)/Makefile.include
