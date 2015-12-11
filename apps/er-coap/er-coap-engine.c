@@ -247,6 +247,7 @@ coap_receive(void)
           void *callback_data = transaction->callback_data;
           if(message->payload_len != 0){
             coap_clear_transaction(transaction);
+            currentTransaction = NULL;
             /* check if someone registered for the response */
             if(callback) {
               callback(callback_data, message);
@@ -258,12 +259,11 @@ coap_receive(void)
         /* if(ACKed transaction) */
         transaction = NULL;
 
-        if(message->type == COAP_TYPE_CON && message->code == CONTENT_2_05) {
-          if((transaction = coap_new_transaction(message->mid, &UIP_IP_BUF->srcipaddr, UIP_UDP_BUF->srcport))){
+        if(currentTransaction && message->type == COAP_TYPE_CON && message->code == CONTENT_2_05) {
+          if((transaction = coap_new_transaction(message->mid, &currentTransaction->addr, currentTransaction->port))){
             /* reliable CON requests are answered with an ACK */
             coap_init_message(response, COAP_TYPE_ACK, NO_ERROR, message->mid);
             transaction->packet_len = coap_serialize_message(response, transaction->packet);
-
             if(currentTransaction){
               /* free transaction memory before callback, as it may create a new transaction */
               restful_response_handler callback = currentTransaction->callback;
@@ -274,8 +274,8 @@ coap_receive(void)
               if(callback) {
                 callback(callback_data, message);
               }
+              currentTransaction = NULL;
             }
-            currentTransaction = NULL;
           }
         }
 
@@ -427,7 +427,7 @@ PT_THREAD(coap_blocking_request
                                                               state->
                                                               transaction->
                                                               packet);
-    currentTransaction = state->transaction;
+      currentTransaction = state->transaction;
       coap_send_transaction(state->transaction);
       PRINTF("Requested #%lu (MID %u)\n", state->block_num, request->mid);
 
