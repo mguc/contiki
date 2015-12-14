@@ -57,7 +57,7 @@
 #define RPL_DIS_INTERVAL_CONF 1
 
 /* default COAP_RESPONSE_TIMEOUT is 3 */
-#define COAP_RESPONSE_TIMEOUT       2
+#define COAP_RESPONSE_TIMEOUT       0.5
 
 /* default COAP_MAX_RETRANSMIT is 4 */
 #define COAP_MAX_RETRANSMIT         3
