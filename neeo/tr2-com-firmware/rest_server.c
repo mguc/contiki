@@ -31,8 +31,7 @@ update_handler(void *request, void *response, uint8_t *buffer, uint16_t preferre
   INFOT("REST: Request received!\n");
   message.id = 0x00;
   message.type = T_UPDATE_PUSH;
-  message.data = buffer;
-  message.len = preferred_size;
+  message.len = REST.get_request_payload(request, &message.data);
 
   send_msg(&message);
   INFOT("REST: message send, len: %u\n", message.len);
