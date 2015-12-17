@@ -22,6 +22,7 @@ RESOURCE(res_update,
          NULL);
 
 msg_t message;
+uint8_t update_message_buffer[1024] = {0};
 
 /*---------------------------------------------------------------------------*/
 void
@@ -32,7 +33,8 @@ update_handler(void *request, void *response, uint8_t *buffer, uint16_t preferre
   message.id = 0x00;
   message.type = T_UPDATE_PUSH;
   message.len = REST.get_request_payload(request, &message.data);
-
+  memcpy(update_message_buffer, message.data, message.len);
+  message.data = update_message_buffer;
   send_msg(&message);
   INFOT("REST: message send, len: %u\n", message.len);
 }
