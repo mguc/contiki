@@ -52,6 +52,8 @@
 
 #undef UIP_CONF_BUFFER_SIZE
 #define UIP_CONF_BUFFER_SIZE    1280
+#undef UIP_CONF_ROUTER
+#define UIP_CONF_ROUTER 0
 
 /* CoAP configuration */
 #define REST_MAX_CHUNK_SIZE     1024
