@@ -116,12 +116,14 @@ typedef uint32_t rtimer_clock_t;
 #define DR_11744_DIO6 16
 #define DR_11744_DIO7 17
 
-/* Enable power amplifier of JN5168 M05 and M06 modules */
-#if defined(JN5168_M05) || defined(JN5168_M06)
-#define RADIO_TEST_MODE RADIO_TEST_MODE_HIGH_PWR
-#else
-#define RADIO_TEST_MODE RADIO_TEST_MODE_DISABLED
-#endif
+ /* Enable power amplifier of JN5168 M05 and M06 modules */
+#ifndef RADIO_TEST_MODE
+ #if defined(JN5168_M05) || defined(JN5168_M06)
+ #define RADIO_TEST_MODE RADIO_TEST_MODE_HIGH_PWR
+ #else
+ #define RADIO_TEST_MODE RADIO_TEST_MODE_DISABLED
+ #endif
+#endif /* RADIO_TEST_MODE */
 
 #define TSCH_DEBUG 0
 
@@ -272,34 +274,34 @@ typedef uint32_t clock_time_t;
 #define SLIP_BRIDGE_CONF_NO_PUTCHAR 1
 #endif /* SLIP_BRIDGE_CONF_NO_PUTCHAR */
 
-/* Extension of LED definitions from leds.h for various JN516x dev boards 
+/* Extension of LED definitions from leds.h for various JN516x dev boards
 JN516x Dongle:
     LEDS_RED        Red LED on dongle
     LEDS_GREEN      Green LED on dongle
     Note: Only one LED can be switch on at the same time
-      
+
 DR1174-only:
     LEDS_GP0        LED D3 on DR1174
     LEDS_GP1        LED D6 on DR1174
-    
+
 DR1174+DR1199:
-    LEDS_RED        LED D1 on DR1199                      
+    LEDS_RED        LED D1 on DR1199
     LEDS_GREEN      LED D2 on DR1199
     LEDS_BLUE       LED D3 on DR1199
     LEDS_GP0        LED D3 on DR1174
     LEDS_GP1        LED D6 on DR1174
-    
+
 DR1174+DR1175:
-    LEDS_RED        Red led in RGB-led with level control on DR1175    
-    LEDS_GREEN      Green led in RGB-led with level control on DR1175    
-    LEDS_BLUE       Blue led in RGB-led with level control on DR1175    
+    LEDS_RED        Red led in RGB-led with level control on DR1175
+    LEDS_GREEN      Green led in RGB-led with level control on DR1175
+    LEDS_BLUE       Blue led in RGB-led with level control on DR1175
     LEDS_WHITE      White power led with level control on DR1175
     LEDS_GP0        LEDS D3 on DR1174
     LEDS_GP1        LEDS D6 on DR1174
 */
 #define LEDS_WHITE    8
 #define LEDS_GP0      16
-#define LEDS_GP1      32 
+#define LEDS_GP1      32
 #define LEDS_GP2      64
 #define LEDS_GP3      128
 #define LEDS_CONF_ALL 255

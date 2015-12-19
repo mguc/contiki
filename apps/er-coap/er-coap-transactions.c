@@ -108,9 +108,9 @@ coap_send_transaction(coap_transaction_t *t)
         PRINTF("Initial interval %f\n",
                (float)t->retrans_timer.timer.interval / CLOCK_SECOND);
       } else {
-        t->retrans_timer.timer.interval <<= 1;  /* double */
-        PRINTF("Doubled (%u) interval %f\n", t->retrans_counter,
-               (float)t->retrans_timer.timer.interval / CLOCK_SECOND);
+//        t->retrans_timer.timer.interval <<= 1;  /* double */
+//        PRINTF("Doubled (%u) interval %f\n", t->retrans_counter,
+//               (float)t->retrans_timer.timer.interval / CLOCK_SECOND);
       }
 
       PROCESS_CONTEXT_BEGIN(transaction_handler_process);

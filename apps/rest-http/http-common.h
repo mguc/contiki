@@ -44,7 +44,7 @@ extern const char* header_delimiter;
 
 /*Configuration parameters*/
 #define HTTP_PORT 8080
-#define HTTP_DATA_BUFF_SIZE 2048
+#define HTTP_DATA_BUFF_SIZE 20480
 #define INCOMING_DATA_BUFF_SIZE 102 /*100+2, 100 = max url len, 2 = space char+'\0'*/
 
 /*HTTP method types*/

@@ -9,7 +9,7 @@
 #include "log_helper.h"
 
 #define SWAP_BYTES16(__x) ((((__x) & 0xff) << 8) | ((__x) >> 8))
-#define PAYLOAD_MAX_LEN 256
+#define PAYLOAD_MAX_LEN 1024
 
 typedef struct hdr_s {
         uint8_t start; // always 0x55
@@ -26,7 +26,7 @@ static int payload_index;
 static uint8_t crc;
 static msg_t msg;
 static struct ringbuf serial_buf;
-static uint8_t serial_buf_data[128];
+static uint8_t serial_buf_data[512];
 
 enum ParserStateEnum {
     WaitForSync = 0,

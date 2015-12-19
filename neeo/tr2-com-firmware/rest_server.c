@@ -3,44 +3,49 @@
 #include <string.h>
 #include "contiki.h"
 #include "contiki-net.h"
-#include "rest.h"
-#include "rest_server.h"
+#include "rest-engine.h"
 #include "serial-protocol.h"
 
 #define DEBUG_LEVEL DEBUG_NONE
 #include "log_helper.h"
 
+static void update_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
+
 PROCESS(rest_server_process, "REST server process");
 
-RESOURCE(update, METHOD_POST, "update");
+resource_t res_update;
+RESOURCE(res_update,
+         "update",
+		 NULL,
+		 update_handler,
+         NULL,
+         NULL);
 
 msg_t message;
+uint8_t update_message_buffer[1024] = {0};
 
 /*---------------------------------------------------------------------------*/
 void
-update_handler(REQUEST* request, RESPONSE* response)
+update_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
   /* TODO: implement some sanity checks */
   INFOT("REST: Request received!\n");
-
-  message.message_id = 0x00;
-  message.message_type = T_UPDATE_PUSH;
-  message.data = request->payload;
-  message.len = request->payload_len;
-
+  message.id = 0x00;
+  message.type = T_UPDATE_PUSH;
+  message.len = REST.get_request_payload(request, &message.data);
+  memcpy(update_message_buffer, message.data, message.len);
+  message.data = update_message_buffer;
   send_msg(&message);
   INFOT("REST: message send, len: %u\n", message.len);
-
-  rest_set_response_status(response, OK_200);
 }
 
 PROCESS_THREAD(rest_server_process, ev, data)
 {
   PROCESS_BEGIN();
   INFOT("REST: Starting REST server\n");
-  rest_init();
+  rest_init_engine();
 
-  rest_activate_resource(&resource_update);
+  rest_activate_resource(&res_update, "update");
 
   PROCESS_END();
 }

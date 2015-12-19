@@ -11,17 +11,18 @@
 #include "tr2-common.h"
 #include "rtc.h"
 #include "er-coap-engine.h"
+#include "rest_server.h"
 
 #define DEBUG_LEVEL DEBUG_NONE
 #include "log_helper.h"
 /*---------------------------------------------------------------------------*/
 #define BRAIN_PORT        3100
 #define BRAIN_COAP_PORT   3901
-#define FW_MAJOR_VERSION    "15"
+#define FW_MAJOR_VERSION    "16"
 
 #define QUERY_STATE_URI_LEN  256
 #define QUERY_STATE_PAYLOAD_LEN  256
-#define QUERY_STATE_DATA_BUF_LEN  512
+#define QUERY_STATE_DATA_BUF_LEN  1024
 /*---------------------------------------------------------------------------*/
 typedef struct query_state_s {
   uint8_t type;
@@ -126,7 +127,7 @@ PROCESS_THREAD(query_process, ev, data)
 
   process_start(&config_process, NULL);
   process_start(&serial_parser_process, NULL);
-  // process_start(&rest_server_process, NULL);
+  process_start(&rest_server_process, NULL);
   process_start(&discover_process, NULL);
   process_start(&coap_process, NULL);
 
@@ -243,7 +244,7 @@ PROCESS_THREAD(coap_process, ev, data)
         //send non confirmable message
         coap_init_message(request, COAP_TYPE_NON, COAP_GET, 0);
         coap_set_header_uri_path(request, query.uri);
-        coap_set_header_block2(request, 0, 0, 64);
+        coap_set_header_block2(request, 0, 0, REST_MAX_CHUNK_SIZE);
         request->mid = coap_get_mid();
         coap_transaction_t *tmpTransaction =  coap_new_transaction(request->mid, &brain_address, BRAIN_COAP_PORT);
         if(tmpTransaction) {
@@ -255,7 +256,7 @@ PROCESS_THREAD(coap_process, ev, data)
         //send confirmable message - make sure we include a token as the answer of the server is returned
         //as a separate message (not piggybacked).
         coap_set_header_uri_path(request, query.uri);
-        coap_set_header_block2(request, 0, 0, 64);
+        coap_set_header_block2(request, 0, 0, REST_MAX_CHUNK_SIZE);
         unsigned int random = random_rand();
         unsigned char token[2];
         token[0] = random & 0xff;
