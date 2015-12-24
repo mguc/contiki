@@ -27,8 +27,11 @@
 #define NETSTACK_CONF_MAC     csma_driver
 #define NETSTACK_CONF_RDC     contikimac_driver
 #define NETSTACK_CONF_FRAMER  contikimac_framer
+
 #undef   MICROMAC_CONF_AUTOACK
 #define  MICROMAC_CONF_AUTOACK 1
+#undef MIRCOMAC_CONF_BUF_NUM
+#define MIRCOMAC_CONF_BUF_NUM 4
 
 #else
 
