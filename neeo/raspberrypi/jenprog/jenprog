@@ -1,0 +1,172 @@
+#!/usr/bin/env python2
+#
+# Copyright (c) 2011
+# Telecooperation Office (TecO), Universitaet Karlsruhe (TH), Germany.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above
+#    copyright notice, this list of conditions and the following
+#    disclaimer in the documentation and/or other materials provided
+#    with the distribution.
+# 3. Neither the name of the Universitaet Karlsruhe (TH) nor the names
+#    of its contributors may be used to endorse or promote products
+#    derived from this software without specific prior written
+#    permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# Author(s): Philipp Scholl <scholl@teco.edu>
+
+from optparse import *
+from time import time
+from sys import stdout, stderr
+from os import SEEK_END, SEEK_SET
+
+conns  = ('serial', 'ipv6', 'ftdi')
+parser = OptionParser()
+parser.add_option('-a', '--address', dest='addr', type='int',
+                  help='start reading at address', metavar='ADDR', default=0x00000000)
+parser.add_option('-l', '--len', dest='len', type='int',
+                  help='number of bytes to read', metavar='LEN', default=192000)
+parser.add_option('-m', '--mac', dest='mac',
+                  help='reset the mac addr')
+parser.add_option('-k', '--key', dest='key',
+                  help='reset the license key')
+parser.add_option('-v', '--verbose', action='store_true', dest='verbose',
+                  help='print send and received packets')
+parser.add_option('-y', '--verify', action='store_true', dest='verify',
+                  help='also verify after writing')
+parser.add_option('-s', '--show', dest='show', action='store_true',
+                  help='show mac address and license key')
+parser.add_option('-e', '--erase', dest='erase', action='store_true',
+                  help='erasing the flash after reading mac and license key')
+parser.add_option('-c', '--connection', type='choice', dest='conn', default='serial', choices=conns,
+                  help='connection implementation ('+",".join(conns)+') [default: %default]')
+parser.add_option('-t', '--target', type='string', help='target for connection', dest='target')
+parser.add_option('--reset-pin', type='int', help='pin number of reset line for ftdi-type connections (default=5)',
+                  default=5, dest='RESET')
+parser.add_option('--spimiso-pin', type='int', help='pin number of spimiso line for ftdi-type connections (default=4)',
+                  default=4, dest='SPIMISO')
+
+(options, args) = parser.parse_args()
+
+if options.conn=='serial':
+    import con_serial
+    bl = con_serial.SerialBootloader(options.target)
+elif options.conn=='ipv6':
+    import con_ipv6
+    bl = con_ipv6.IPBootloader(options.target)
+elif options.conn=='ftdi':
+    import con_ftdi
+    bl = con_ftdi.FtdiBootloader(RESET=options.RESET, SPIMISO=options.SPIMISO)
+else:
+    raise Exception('nahh')
+
+if options.verbose: bl.isverbose = True
+
+#
+# Select the actions:
+#
+if options.show or options.erase:
+    stdout.write("flash: %s %s\n"%(bl.flash_manufacturer, bl.flash_type))
+    stdout.write("mac: 0x")
+    for b in bl.read_mac(): stdout.write("%02x"%b)
+    stdout.write(" license: 0x")
+    for b in bl.read_license(): stdout.write("%02x"%b)
+    stdout.write("\n")
+    stdout.write("Chip ID: ")
+    for b in bl.read_chipid(): stdout.write("%02x" % b)
+    stdout.write("\n")
+    if options.erase: bl.erase_flash()
+
+elif options.mac or options.key:
+    if options.mac:
+        bl.set_mac(options.mac)
+        bl.write_mac()
+    if options.key:
+        bl.set_license(options.key)
+        bl.write_license()
+
+elif len(args)!=1:
+    block,i,start = bl.preferedblocksize or 0xf0,0,time()
+    for addr in xrange(options.addr, options.addr+options.len, block):
+        for byte in bl.read_flash(addr, block):
+            stdout.write("%c"%byte)
+
+        if addr>((options.addr+options.len)/10.*i):
+            stderr.write("%i%%.."%(i*10))
+            i += 1
+
+    kb,sec  = options.len/1000., (time()-start)
+    stderr.write("done - %0.2f kb/s\n"%(kb/sec))
+
+else:
+    file = open(args[0], "rb")
+
+    # read the file size
+    file.seek(0,SEEK_END)
+    size = file.tell()
+    file.seek(0,SEEK_SET)
+
+    # start reading the file, 0x80 seems to be the only blocksize
+    # working for the jennic bootloader with certain flashtypes
+    block,i,start = bl.preferedblocksize or 0x80,0,time()
+
+    # Antmicro fix - skip first 4 bytes as it is a file header
+    file.seek(4)
+    size -= 4
+    # ~Antmicro fix
+
+    data = file.read(block)
+    addr = 0x00000000
+
+    # erase_flash gets the mac and license key prior to doing
+    # its opertation.
+    bl.erase_flash()
+
+    # issue a write_init command if the boot loader supports
+    # that.
+    if hasattr(bl, 'write_init'):
+        bl.write_init(size)
+
+    while len(data) != 0:
+        if hasattr(bl, 'write2_flash'):
+            bl.write2_flash(addr, data)
+        else:
+            bl.write_flash(addr, data)
+        addr += len(data)
+        data  = file.read(block)
+
+        if addr>(size/10.*i):
+            stderr.write("%i%%.."%(i*10))
+            i += 1
+
+    kb,sec  = size/1000., (time()-start)
+    stderr.write("done - %0.2f kb/s "%(kb/sec))
+
+    # stderr.write("- writing mac address and key..")
+    # bl.write_mac()
+    # bl.write_license()
+    stderr.write("\n")
+
+    if options.verify:
+        raise Exception, "not implemented"
+
+# this restarts the module on some programmers
+bl.finish()
+

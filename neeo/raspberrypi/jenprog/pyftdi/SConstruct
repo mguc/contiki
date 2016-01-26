@@ -1,0 +1,15 @@
+import sys
+import os
+
+env = Environment()
+env.ParseConfig('pkg-config --libs --cflags libftdi python-%d.%d'%(sys.version_info[0], sys.version_info[1]))
+
+PYPLATPATH = filter(lambda x: "plat" in x, sys.path)[0]
+
+lib = env.SharedLibrary( target='_ftdi', source='ftdi.i'.split(),
+                     CPPPATH=['.', '$CPPPATH'],
+                     SWIGFLAGS='-python -I/usr/include',
+                     SHLIBPREFIX='',
+                    )
+
+env.Alias('install', env.Install(PYPLATPATH, [lib, 'ftdi.py']))
