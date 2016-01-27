@@ -4,5 +4,5 @@ if [ $# -ne 1 ]; then
     echo "e.g.: ./init_pi.sh 192.168.0.123"
     exit 1
 fi
-scp id_pi.pub pi@$1:~/.ssh/authorized_keys 
-scp -i id_pi -r jenprog/ pi@$1:jenprog
+scp id_pi.pub root@$1:~/.ssh/authorized_keys 
+scp -i id_pi -r jenprog/ root@$1:~/jenprog
