@@ -77,7 +77,6 @@ volatile unsigned char xonxoff_state = XON;
 PROCESS(slip_process, "SLIP driver");
 
 #include "dev/uart0.h"
-#include "dev/uart1.h"
 #define STORE_UART_INTERRUPTS       uart0_store_interrupts
 #define RESTORE_UART_INTERRUPTS     uart0_restore_interrupts
 #define DISABLE_UART_INTERRUPTS     uart0_disable_interrupts
@@ -442,7 +441,7 @@ slip_input_byte(unsigned char c)
 int
 putchar(int c)
 {
-  uart1_writeb(c);
+  uart0_writeb(c);
   return 1;
 }
 #endif
