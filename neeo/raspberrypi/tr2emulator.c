@@ -20,8 +20,8 @@ char crc8(const void *vptr, int len)
 }
 
 int main(){
-  char * my_str = "/projects/home/tr2/zero_con_xml";
+  char * my_str = "/projects/home/tr2/zero_conf_xml";
   char crc = crc8(my_str, strlen(my_str));
-  printf("%s, %x\n\r", my_str, crc);
+  printf("%s, %x\n\r", my_str, crc & 0x000000FF);
   return 0;
 }
