@@ -2,7 +2,6 @@
 import time
 import serial
 from struct import pack, unpack
-from enum import Enum
 
 commands = {
     'T_JN_VERSION' : 0x02,
@@ -97,17 +96,29 @@ while 1 :
         print msg.encode('hex')
         print "Sending message with length: ", len(msg)
         ser.write(msg)
-        start_time = time.time()
-        while (ser.inWaiting() == 0 and (time.time() - start_time < 5)):
-            print "Waiting for response..."
-            time.sleep(0.1) # sleep for 100ms
         out = ''
-        while ser.inWaiting() > 0 :
-            out += ser.read(1)
-        if out != '' :
-            print out
+        while len(out) != 8 :
+            if ser.inWaiting() > 0 :
+                out += ser.read(1)
+            if len(out) == 1 :
+                if out != 'U' :
+                    out = ''
+        if crc8(out[0:8]) != 0 :
+            print "Header CRC check failed"
+            continue
+        rx_msg_len = unpack('<H', out[3:5])
+        rx_msg_len = rx_msg_len[0] + 1
+        print "Expected message length: ", rx_msg_len
+        out = ''
+        while len(out) != rx_msg_len :
+            if ser.inWaiting() > 0 :
+                out += ser.read(1)
+        if crc8(out[0:rx_msg_len]) != 0 :
+            print "Payload CRC check failed"
+            continue
+        if len(out) > 1 :
+            print out[0:(rx_msg_len - 1)]
             print "Received message with length: ", len(out)
-        else :
-            print "Timeout occured..."
+
     except KeyError:
         print "Wrong command. Type 'help' to get a list of possible commands."
