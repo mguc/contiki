@@ -3,21 +3,21 @@ CONTIKI_CPU_DIRS = . net dev
 CONTIKI_SOURCEFILES += mtarch.c rtimer-arch.c elfloader-stub.c watchdog.c eeprom.c
 
 ### Compiler definitions
-CC       ?= gcc
+CC       = $(CROSS_COMPILE)gcc
 ifdef LD_OVERRIDE
   LD     = $(LD_OVERRIDE)
 else
-  LD     = gcc
+  LD     = $(CROSS_COMPILE)gcc
 endif
-AS       ?= as
-NM       ?= nm
-OBJCOPY  ?= objcopy
-STRIP    ?= strip
+AS       ?= $(CROSS_COMPILE)as
+NM       ?= $(CROSS_COMPILE)nm
+OBJCOPY  ?= $(CROSS_COMPILE)objcopy
+STRIP    ?= $(CROSS_COMPILE)strip
 ifdef WERROR
-CFLAGSWERROR=-Werror
+CFLAGSWERROR=-Werror -pedantic -std=c99 -Werror
 endif
 CFLAGSNO = -Wall -g -I/usr/local/include $(CFLAGSWERROR)
-CFLAGS  += $(CFLAGSNO)
+CFLAGS  += $(CFLAGSNO) -O
 
 ifeq ($(HOST_OS),Darwin)
 AROPTS = -r
