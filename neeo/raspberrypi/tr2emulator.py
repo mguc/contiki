@@ -4,23 +4,23 @@ import serial
 from struct import pack, unpack
 
 commands = {
-    'T_JN_VERSION' : 0x02,
-    'T_GET_CP6_LIST' : 0x03,
-    'T_STATUS' : 0x04,
-    'T_WIFI_CREDS' : 0x05,
-    'T_BRAIN_INFO' : 0x06,
-    'T_REST_REQUEST' : 0x07,
-    'T_FIRMWARE_INFO' : 0x08,
-    'T_GET_LOCAL_IP' : 0x09,
-    'T_UPDATE_PUSH' : 0x0A,
-    'T_PAIR_WITH_CP6' : 0x0B,
-    'T_REST_GET' : 0x11,
-    'T_REST_POST' : 0x12,
-    'T_REST_PUT' : 0x13,
-    'T_REST_DELETE' : 0x14,
-    'T_TRIGGER_ACTION' : 0x15,
-    'T_DEBUG' : 0x16,
-    'T_ERROR_RESPONSE' : 0xEE
+    'version' : 0x02, #T_JN_VERSION
+    'list' : 0x03, #T_GET_CP6_LIST
+    'status' : 0x04, #T_STATUS
+    # 'T_WIFI_CREDS' : 0x05, this command is not used anymore
+    'info' : 0x06, #T_BRAIN_INFO
+    # 'T_REST_REQUEST' : 0x07, # this command is not used anymore
+    # 'T_FIRMWARE_INFO' : 0x08, # this command is not used anymore
+    'ip' : 0x09, #T_GET_LOCAL_IP
+    # 'T_UPDATE_PUSH' : 0x0A, # 'T_DEBUG' : 0x16, # this message type is only avaiable for the JN
+    'pair' : 0x0B, #T_PAIR_WITH_CP6
+    'get' : 0x11, #T_REST_GET
+    'post' : 0x12, #T_REST_POST
+    'put' : 0x13, #T_REST_PUT
+    'delete' : 0x14, #T_REST_DELETE
+    'action' : 0x15, #T_TRIGGER_ACTION
+    # 'T_DEBUG' : 0x16, # this message type is only avaiable for the JN
+    # 'T_ERROR_RESPONSE' : 0xEE # this message type is only avaiable for the JN
 }
 msg_hdr = {
     'start' : 0x55,
