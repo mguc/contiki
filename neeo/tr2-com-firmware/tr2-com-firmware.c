@@ -250,6 +250,10 @@ PROCESS_THREAD(coap_process, ev, data)
         if(tmpTransaction) {
           tmpTransaction->packet_len = coap_serialize_message(request, tmpTransaction->packet);
           coap_send_transaction(tmpTransaction);
+          msg_coap_ack.id = query.id;
+          msg_coap_ack.type = query.type;
+          msg_coap_ack.len = 0;
+          msg_coap_ack.data = NULL;
         }
       }
       else {

@@ -60,6 +60,8 @@
 
 /* CoAP configuration */
 #define REST_MAX_CHUNK_SIZE     1024
+#undef COAP_MAX_HEADER_SIZE
+#define COAP_MAX_HEADER_SIZE 	200
 
 #define RPL_DIS_INTERVAL_CONF 1
 
