@@ -298,6 +298,8 @@ PROCESS_THREAD(config_process, ev, data)
     PROCESS_YIELD();
     if(ev == PROCESS_EVENT_MSG)
     {
+      memset(resp_buf, 0, sizeof(resp_buf));
+      memset(addr_buf, 0, sizeof(addr_buf));
       msg_ptr = (msg_t*)data;
       msg_buf.type = msg_ptr->type;
       msg_buf.id = msg_ptr->id;
@@ -331,13 +333,24 @@ PROCESS_THREAD(config_process, ev, data)
       }
       else if(msg_ptr->type == T_PAIR_WITH_CP6)
       {
-        uiplib_ipaddrconv((const char *)msg_ptr->data, &brain_address);
+    	uip_ipaddr_t tmp_address;
+        if(uiplib_ipaddrconv((const char *)msg_ptr->data, &tmp_address)){
+        	uip_ipaddr_copy(&brain_address, &tmp_address);
+            msg_buf.data = NULL;
+            msg_buf.len = 0;
+        }
+        else {
+        	strcpy(resp_buf, "Not valid address!");
+        	msg_buf.type = T_ERROR_RESPONSE;
+        	msg_buf.data = (uint8_t*)resp_buf;
+        	msg_buf.len = strlen(resp_buf) + 1;
+        }
+
         print_addr(&brain_address, addr_buf, &addr_buf_len);
         INFOT("INIT: Brain address: %s\n", addr_buf);
 
         // TODO: start pair process, open TCP/IP connection?
-        msg_buf.data = NULL;
-        msg_buf.len = 0;
+
         send_msg(&msg_buf);
       }
       else if(msg_ptr->type == T_GET_FW_VERSION)

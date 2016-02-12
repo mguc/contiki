@@ -142,6 +142,7 @@ PROCESS_THREAD(serial_parser_process, ev, data)
           payload_index = 0;
           if(c != 0x55)
             break;
+          memset(payload, 0, sizeof(payload));
           ParserState = GetType;
           crc = crc8_update(0, c);
           break;
