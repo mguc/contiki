@@ -199,7 +199,7 @@ PROCESS_THREAD(print_rfusage_process, ev, data)
   PROCESS_BEGIN();
   printf("Starting UDP unicast receiever.\n");
   while(1) {
-    etimer_set(&periodic_timer, 5 * CLOCK_SECOND);
+    etimer_set(&periodic_timer, 1 * CLOCK_SECOND);
     PROCESS_WAIT_UNTIL(etimer_expired(&periodic_timer));
 
     static uint32_t last_cpu, last_lpm, last_transmit, last_listen;
@@ -231,23 +231,19 @@ PROCESS_THREAD(print_rfusage_process, ev, data)
       time = 1;
     }
 
-    cpu_percentage = (cpu * 1000) / time;
-    rf_percentage = (radio * 1000) / time;
+    cpu_percentage = (cpu * 100UL) / time;
+    rf_percentage = (radio * 100UL) / time;
 
-    if(cpu_percentage > 1000) {
-      cpu_percentage = 1000;
+    if(cpu_percentage > 100) {
+      cpu_percentage = 100;
     }
-    if(rf_percentage > 1000) {
-      rf_percentage = 1000;
+    if(rf_percentage > 100) {
+      rf_percentage = 100;
     }
 
     /* Print */
-    printf("RF percentage %d.%d\n",
-            (int)(rf_percentage / 10),
-            (int)(rf_percentage % 10));
+    printf("RF percentage %d\n", (int)rf_percentage);
     printf("RF channel %d\n", get_rf_channel());
-    printf("PAN ID %04x\n", csl_mlme_panid());
-
   }
 
   PROCESS_END();
