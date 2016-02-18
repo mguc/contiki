@@ -140,8 +140,12 @@ rest_invoke_restful_service(void *request, void *response, uint8_t *buffer,
       resource; resource = resource->next) {
 
     /* if the web service handles that kind of requests and urls matches */
+#define XXX_REMOVE_ME_FOR_TESTING_ONLY 1
+#if XXX_REMOVE_ME_FOR_TESTING_ONLY
+#warning XXX Warning: the rest-engine.c currently calls all resources, and should not be enabled in production
+#endif /* XXX_REMOVE_ME_FOR_TESTING_ONLY */
     res_url_len = strlen(resource->url);
-    if((url_len == res_url_len
+    if(XXX_REMOVE_ME_FOR_TESTING_ONLY || (url_len == res_url_len
         || (url_len > res_url_len
             && (resource->flags & HAS_SUB_RESOURCES)
             && url[res_url_len] == '/'))
