@@ -42,11 +42,6 @@
 
 #include "net/rime/rimestats.h"
 
-#define BECOME_MUCHA_AUTH 0
-#if BECOME_MUCHA_AUTH
-#include "csl-mucha.h"
-#endif /* BECOME_MUCHA_AUTH */
-
 #include <stdio.h>
 #include <string.h>
 
@@ -171,10 +166,6 @@ PROCESS_THREAD(udp_unicast_process, ev, data)
   static uip_ipaddr_t addr;
 
   PROCESS_BEGIN();
-
-#if BECOME_MUCHA_AUTH
-  csl_mucha_set_authority(CSL_MUCHA_SYNCH_ROOT);
-#endif /* BECOME_MUCHA_AUTH */
 
   /* Note: set destination to NULL, to allow receiving packets from anyone */
   simple_udp_register(&unicast_connection, UDP_PORT, NULL, UDP_PORT,
