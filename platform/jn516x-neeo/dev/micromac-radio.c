@@ -404,6 +404,7 @@ static int
 transmit(unsigned short payload_len)
 {
   if(tx_in_progress) {
+    printf("XXX COLLISION %d tx_in_process\n", __LINE__);
     return RADIO_TX_COLLISION;
   }
   tx_in_progress = 1;
@@ -443,17 +444,22 @@ transmit(unsigned short payload_len)
   uint32_t tx_error = u32MMAC_GetTxErrors();
   if(tx_error == 0) {
     ret = RADIO_TX_OK;
+    printf("XXX RADIO_TX_OK %d\n", __LINE__);
     RIMESTATS_ADD(acktx);
   } else if(tx_error & E_MMAC_TXSTAT_ABORTED) {
     ret = RADIO_TX_ERR;
+    printf("XXX RADIO_TX_ERR %d\n", __LINE__);
     RIMESTATS_ADD(sendingdrop);
   } else if(tx_error & E_MMAC_TXSTAT_CCA_BUSY) {
     ret = RADIO_TX_COLLISION;
+    printf("XXX RADIO_TX_COLLISION CCA YAY %d\n", __LINE__);
     RIMESTATS_ADD(contentiondrop);
   } else if(tx_error & E_MMAC_TXSTAT_NO_ACK) {
     ret = RADIO_TX_NOACK;
+    printf("XXX RADIO_TX_NOACK %d\n", __LINE__);
     RIMESTATS_ADD(noacktx);
   } else {
+    printf("XXX RADIO_TX_ERR %d\n", __LINE__);
     ret = RADIO_TX_ERR;
   }
   return ret;
