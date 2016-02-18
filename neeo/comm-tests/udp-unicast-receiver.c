@@ -167,6 +167,8 @@ PROCESS_THREAD(udp_unicast_process, ev, data)
 
   PROCESS_BEGIN();
 
+  rpl_dag_root_init_dag();
+
   /* Note: set destination to NULL, to allow receiving packets from anyone */
   simple_udp_register(&unicast_connection, UDP_PORT, NULL, UDP_PORT,
                       receiver);
