@@ -177,7 +177,7 @@ PROCESS_THREAD(print_rfusage_process, ev, data)
   PROCESS_BEGIN();
 
   while(1) {
-    etimer_set(&periodic_timer, 5 * CLOCK_SECOND);
+    etimer_set(&periodic_timer, 1 * CLOCK_SECOND);
     PROCESS_WAIT_UNTIL(etimer_expired(&periodic_timer));
 
     static uint32_t last_cpu, last_lpm, last_transmit, last_listen;
