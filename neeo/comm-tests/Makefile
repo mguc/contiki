@@ -3,11 +3,11 @@ all: $(CONTIKI_PROJECT)
 
 CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
 
-THSQAPPS+=replong
+#THSQAPPS+=replong
 
-THSQ=../..
+CONTIKI=../..
 
 SMALL=1
 #IAR=1
 
-include $(THSQ)/Makefile.include
+include $(CONTIKI)/Makefile.include
