@@ -209,23 +209,18 @@ PROCESS_THREAD(print_rfusage_process, ev, data)
       time = 1;
     }
 
-    cpu_percentage = (cpu * 1000UL) / time;
-    rf_percentage = (radio * 1000UL) / time;
+    cpu_percentage = (cpu * 100UL) / time;
+    rf_percentage = (radio * 100UL) / time;
 
-    if(cpu_percentage > 1000UL) {
-      cpu_percentage = 1000UL;
+    if(cpu_percentage > 100UL) {
+      cpu_percentage = 100UL;
     }
-    if(rf_percentage > 1000UL) {
-      rf_percentage = 1000UL;
+    if(rf_percentage > 100UL) {
+      rf_percentage = 100UL;
     }
 
     /* Print */
-    printf("RF percentage %d.%d\n",
-            (int)(rf_percentage / 10UL),
-            (int)(rf_percentage % 10));
-    printf("time %lu\n", (uint32_t)time);
-    printf("radio %lu\n", (uint32_t)radio);
-    printf("RTIMER_SECOND %lu\n", (uint32_t)RTIMER_SECOND);
+    printf("RF percentage %d\n", (int)(rf_percentage));
     printf("RF channel %d\n", get_rf_channel());
 
   }
