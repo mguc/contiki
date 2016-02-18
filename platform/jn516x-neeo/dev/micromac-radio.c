@@ -405,11 +405,11 @@ static int
 transmit(unsigned short payload_len)
 {
   if(tx_in_progress) {
-    printf("XXX COLLISION %d tx_in_process\n", __LINE__);
+//    printf("XXX COLLISION %d tx_in_process\n", __LINE__);
     return RADIO_TX_COLLISION;
   }
   if(send_on_cca && !cca()) {
-    printf("XXX CCA %d, return collision\n", __LINE__);
+//    printf("XXX CCA %d, return collision\n", __LINE__);
     return RADIO_TX_COLLISION;
   }
   tx_in_progress = 1;
