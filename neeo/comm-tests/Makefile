@@ -14,4 +14,6 @@ CONTIKI=../..
 SMALL=1
 #IAR=1
 
+PROJECT_SOURCEFILES += rimestats.c
+
 include $(CONTIKI)/Makefile.include

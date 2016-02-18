@@ -33,7 +33,9 @@
 #include "sys/etimer.h"
 #include "net/ip/uip.h"
 #include "net/ipv6/uip-ds6.h"
+#if RIMESTATS_CONF_ENABLED
 #include "net/rime/rimestats.h"
+#endif /* RIMESTATS_CONF_ENABLED */
 
 #include "udp-socket.h"
 #include "uip-debug.h"
@@ -81,11 +83,6 @@ static int received;
 
 static int timeouts = 0;
 
-#define WITH_MUCHA 1
-#if WITH_MUCHA
-#include "csl-mucha.h"
-#endif /* WITH_MUCHA */
-
 /*---------------------------------------------------------------------------*/
 PROCESS(pingpong_process, "Ping pong process");
 PROCESS(print_stats_process, "Print stats");
@@ -95,7 +92,7 @@ static void
 send_pingpong(void)
 {
   clock_time_t timeout = TIMEOUT
-      + (clock_time_t)(random_rand32() % (TIMEOUT_RANDOM));
+      + (clock_time_t)(random_rand() % (TIMEOUT_RANDOM));
   timer_set(&timeout_timer, timeout);
 
   if(uip_ipaddr_cmp(&neighbor, &unspec)) {
@@ -123,18 +120,10 @@ udp_receiver(struct udp_socket *c,
   if(!uip_ipaddr_cmp(&neighbor, sender_addr)) {
     printf("new pingpong remote: ");
     uip_debug_ipaddr_print(sender_addr);
-    printf(", I am: ");
-    uip_debug_ipaddr_print(rpl_dag_root_get_local_address());
+//    printf(", I am: ");
+//    uip_debug_ipaddr_print(rpl_dag_root_get_local_address());
     printf("\n");
     uip_ipaddr_copy(&neighbor, sender_addr);
-
-#if WITH_MUCHA
-    if(memcmp(rpl_dag_root_get_local_address(), &neighbor,
-              sizeof(uip_ip6addr_t)) < 0) {
-      printf("Becoming RPL root\n");
-      rpl_dag_root_init_dag_immediately();
-    }
-#endif /* WITH_MUCHA */
   }
 
   /* Register pingpong remote */
@@ -175,7 +164,7 @@ send_broadcast(void* ptr)
   char* buf = "broadcast";
 
   printf("sending broadcast from: ");
-  uip_debug_ipaddr_print(rpl_dag_root_get_local_address());
+//  uip_debug_ipaddr_print(rpl_dag_root_get_local_address());
   printf("\n");
   udp_socket_sendto(&s, buf, BROADCAST_SIZE, &multicast_addr, PORT_UDP);
 }
@@ -187,11 +176,6 @@ PROCESS_THREAD(pingpong_process, ev, data)
   static struct etimer et;
 
   PROCESS_BEGIN();
-
-#if WITH_MUCHA
-  /* Whoever has the "lowest" IP address becomes authority */
-  csl_mucha_init();
-#endif /* WITH_MUCHA */
 
   sent = 0;
   received = 0;
@@ -205,7 +189,7 @@ PROCESS_THREAD(pingpong_process, ev, data)
   udp_socket_connect(&s, NULL, PORT_UDP);
 
   clock_time_t timeout = TIMEOUT
-      + (clock_time_t)(random_rand32() % (TIMEOUT_RANDOM));
+      + (clock_time_t)(random_rand() % (TIMEOUT_RANDOM));
   timer_set(&timeout_timer, timeout);
   ctimer_set(&keepalive_ctimer, CLOCK_SECOND, keepalive_pingpongs,
              (void*)&keepalive_ctimer); /* reschedules itself */
@@ -216,7 +200,7 @@ PROCESS_THREAD(pingpong_process, ev, data)
     etimer_set(&et, BROADCAST_PERIOD);
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
 
-    clock_time_t delay = (clock_time_t)(random_rand32() % (BROADCAST_PERIOD));
+    clock_time_t delay = (clock_time_t)(random_rand() % (BROADCAST_PERIOD));
     ctimer_set(&broadcast_ctimer, delay, send_broadcast, NULL);
 
     /* XXX We only broadcast once! */
@@ -296,13 +280,17 @@ PROCESS_THREAD(print_stats_process, ev, data)
     uint32_t efficiency = 10000UL * (8UL * unicast_current_size * (sent + received))
           / (rf_percentage * TEST_PERIOD_SECS); /* NB: rf_percentage is in promilles */
     printf("Power-efficiency: %d.%d bits/radio on second\n", (int)(efficiency/10), (int)(efficiency%10));
+#if RIMESTATS_CONF_ENABLED
     printf("Reliability: %ld/%ld %d%% acks received\n", rimestats.ackrx, rimestats.reliabletx, (int) ((100*rimestats.ackrx)/rimestats.reliabletx));
+#endif /* RIMESTATS_CONF_ENABLED */
     printf("\n");
 
     sent = 0;
     received = 0;
+#if RIMESTATS_CONF_ENABLED
     rimestats.ackrx = 0;
     rimestats.reliabletx = 0;
+#endif /* RIMESTATS_CONF_ENABLED */
 
     unicast_current_size += 10;
     if(unicast_current_size > UNICAST_MAX_SIZE) {
