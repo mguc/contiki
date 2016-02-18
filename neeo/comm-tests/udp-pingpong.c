@@ -177,6 +177,11 @@ PROCESS_THREAD(pingpong_process, ev, data)
 
   PROCESS_BEGIN();
 
+  if(node_id == 1) {
+    rpl_dag_root_init_dag();
+    printf("initiating rpl dag\n");
+  }
+
   sent = 0;
   received = 0;
 
