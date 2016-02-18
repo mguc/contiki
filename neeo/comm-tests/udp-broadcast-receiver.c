@@ -47,8 +47,8 @@
 #define UDP_PORT 123
 
 /* Configuration */
-#define MIN_SIZE 1
-#define MAX_SIZE 110
+#define MIN_SIZE 200
+#define MAX_SIZE 400
 #define PRINT_BLOCK_SIZE 10
 
 #define NR_LOGS (MAX_SIZE - MIN_SIZE + 1)
