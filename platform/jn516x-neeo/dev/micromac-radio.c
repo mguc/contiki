@@ -407,6 +407,9 @@ transmit(unsigned short payload_len)
     printf("XXX COLLISION %d tx_in_process\n", __LINE__);
     return RADIO_TX_COLLISION;
   }
+  if(!cca()) {
+    printf("XXX CCA %d, still trying to send\n", __LINE__);
+  }
   tx_in_progress = 1;
 
   /* Energest */
