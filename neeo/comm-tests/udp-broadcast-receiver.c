@@ -223,6 +223,9 @@ PROCESS_THREAD(print_rfusage_process, ev, data)
     printf("RF percentage %d.%d\n",
             (int)(rf_percentage / 10),
             (int)(rf_percentage % 10));
+    printf("time %lu\n", (uint32_t)time);
+    printf("radio %lu\n", (uint32_t)radio);
+    printf("RTIMER_SECOND %lu\n", (uint32_t)RTIMER_SECOND);
     printf("RF channel %d\n", get_rf_channel());
 
   }
