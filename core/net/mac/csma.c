@@ -255,7 +255,7 @@ packet_sent(void *ptr, int status, int num_transmissions)
 
         switch(status) {
         case MAC_TX_COLLISION:
-          PRINTF("csma: rexmit collision %d\n", n->transmissions);
+          printf("csma: rexmit collision %d\n", n->transmissions);
           break;
         case MAC_TX_NOACK:
           PRINTF("csma: rexmit noack %d\n", n->transmissions);
