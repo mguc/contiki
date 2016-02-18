@@ -3,6 +3,10 @@ all: $(CONTIKI_PROJECT)
 
 CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
 
+ifeq ($(WITH_FEM),1)
+  CFLAGS += -DRADIO_TEST_MODE=RADIO_TEST_MODE_HIGH_PWR
+endif
+
 #THSQAPPS+=replong
 
 CONTIKI=../..
