@@ -57,8 +57,6 @@
 #include "JPT.h"
 #include "PeripheralRegs.h"
 
-#include <stdio.h>
-
 void vMMAC_SetChannelAndPower(uint8 u8Channel, int8 i8power);
 
 /* This driver configures the radio in PHY mode and does address decoding
@@ -406,7 +404,6 @@ static int
 transmit(unsigned short payload_len)
 {
   if(tx_in_progress) {
-    printf("XXX %s %d tx_in_progress\n", __FILE__, __LINE__);
     return RADIO_TX_COLLISION;
   }
   tx_in_progress = 1;
@@ -450,17 +447,13 @@ transmit(unsigned short payload_len)
   } else if(tx_error & E_MMAC_TXSTAT_ABORTED) {
     ret = RADIO_TX_ERR;
     RIMESTATS_ADD(sendingdrop);
-    printf("XXX %s %d sendingdrop\n", __FILE__, __LINE__);
   } else if(tx_error & E_MMAC_TXSTAT_CCA_BUSY) {
     ret = RADIO_TX_COLLISION;
     RIMESTATS_ADD(contentiondrop);
-    printf("XXX %s %d tx coll\n", __FILE__, __LINE__);
   } else if(tx_error & E_MMAC_TXSTAT_NO_ACK) {
     ret = RADIO_TX_NOACK;
     RIMESTATS_ADD(noacktx);
-    printf("XXX %s %d noack\n", __FILE__, __LINE__);
   } else {
-    printf("XXX %s %d err hmmm\n", __FILE__, __LINE__);
     ret = RADIO_TX_ERR;
   }
   return ret;
@@ -475,11 +468,9 @@ prepare(const void *payload, unsigned short payload_len)
   RIMESTATS_ADD(lltx);
 
   if(tx_in_progress) {
-    printf("XXX error tx_in_progress fail\n");
     return 1;
   }
   if(payload_len > 127 || payload == NULL) {
-    printf("XXX prepare too long fail\n");
     return 1;
   }
     /* Copy payload to (soft) Ttx buffer */
@@ -504,7 +495,6 @@ send(const void *payload, unsigned short payload_len)
   if(prepare(payload, payload_len) == 0) {
     return transmit(payload_len);
   } else {
-    printf("XXX prepare too long fail %d\n", __LINE__);
     return RADIO_TX_ERR;
   }
 }
@@ -605,7 +595,6 @@ read(void *buf, unsigned short bufsize)
       | input_frame_buffer->uPayload.au8Byte[len];
     radio_last_rx_crc_ok = (checksum == radio_last_rx_crc);
     if(!radio_last_rx_crc_ok) {
-      printf("XXX %s %d bad crc\n", __FILE__, __LINE__);
       RIMESTATS_ADD(badcrc);
     }
 #endif /* CRC_SW */
@@ -615,7 +604,6 @@ read(void *buf, unsigned short bufsize)
         if(frame_filtering &&
            !is_packet_for_us(input_frame_buffer->uPayload.au8Byte, len, 0)) {
           len = 0;
-          printf("XXX frame_filt ignored %d\n", __LINE__);
         } else {
           read_last_rssi();
         }
@@ -631,7 +619,6 @@ read(void *buf, unsigned short bufsize)
         }
       }
     } else {
-      printf("XXX read not ok %d\n", __LINE__);
       len = 0;
     }
       /* Disable further read attempts */
@@ -793,7 +780,6 @@ radio_interrupt_handler(uint32 mac_event)
             /* move rx_frame_buffer to next empty slot */
             rx_frame_buffer = &input_array[put_index];
           } else {
-            printf("XXX overflow %d\n", __LINE__);
             overflow = 1;
             rx_frame_buffer = NULL;
           }
@@ -802,15 +788,10 @@ radio_interrupt_handler(uint32 mac_event)
     } else { /* if rx is not successful */
       if(rx_status & E_MMAC_RXSTAT_ABORTED) {
         RIMESTATS_ADD(badsynch);
-        printf("XXX %s %d bad rx\n", __FILE__, __LINE__);
       } else if(rx_status & E_MMAC_RXSTAT_ERROR) {
         RIMESTATS_ADD(badcrc);
-        printf("XXX %s %d bad crc\n", __FILE__, __LINE__);
       } else if(rx_status & E_MMAC_RXSTAT_MALFORMED) {
         RIMESTATS_ADD(toolong);
-        printf("XXX %s %d too long\n", __FILE__, __LINE__);
-      } else {
-        printf("XXX %s %d hmm\n", __FILE__, __LINE__);
       }
     }
   }
@@ -901,8 +882,6 @@ set_poll_mode(uint8_t enable)
 static void
 set_send_on_cca(uint8_t enable)
 {
-  printf("XXX VARAVARA set_send_on_cca %s %d\n", __FILE__, __LINE__);
-
   send_on_cca = enable;
 }
 /*---------------------------------------------------------------------------*/
