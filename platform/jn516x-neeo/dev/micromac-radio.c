@@ -407,8 +407,9 @@ transmit(unsigned short payload_len)
     printf("XXX COLLISION %d tx_in_process\n", __LINE__);
     return RADIO_TX_COLLISION;
   }
-  if(!cca()) {
-    printf("XXX CCA %d, still trying to send\n", __LINE__);
+  if(send_on_cca && !cca()) {
+    printf("XXX CCA %d, return collision\n", __LINE__);
+    return RADIO_TX_COLLISION;
   }
   tx_in_progress = 1;
 
@@ -419,9 +420,7 @@ transmit(unsigned short payload_len)
   ENERGEST_ON(ENERGEST_TYPE_TRANSMIT);
 
   /* Transmit and wait */
-  vMMAC_StartPhyTransmit(&tx_frame_buffer,
-                         E_MMAC_TX_START_NOW |
-                         (send_on_cca ? E_MMAC_TX_USE_CCA : E_MMAC_TX_NO_CCA));
+  vMMAC_StartPhyTransmit(&tx_frame_buffer, E_MMAC_TX_START_NOW | E_MMAC_TX_NO_CCA));
 
   if(poll_mode) {
     BUSYWAIT_UNTIL(u32MMAC_PollInterruptSource(E_MMAC_INT_TX_COMPLETE), MAX_PACKET_DURATION);
