@@ -1,4 +1,4 @@
-CONTIKI_PROJECT = udp-broadcast-sender udp-broadcast-receiver
+CONTIKI_PROJECT = udp-unicast-sender udp-unicast-receiver
 all: $(CONTIKI_PROJECT)
 
 CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
