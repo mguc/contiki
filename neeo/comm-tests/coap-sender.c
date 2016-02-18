@@ -20,10 +20,9 @@
 /*---------------------------------------------------------------------------*/
 #define SEND_INTERVAL (5 * CLOCK_SECOND)
 #define PORT_BROADCAST 200
-#define LEN_MIN 10
-#define LEN_MAX 100
+#define REQ_LEN 150 /* Must not be shorter than strlen("/update") + 5 */
 #define COAP_PORT SERVER_LISTEN_PORT
-#define REALLY_LONG_URI "/update/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+#define REALLY_LONG_URI "/update/                                                                                                                                                                                                                                             "
 /*---------------------------------------------------------------------------*/
 static uip_ipaddr_t remote;
 static uip_ipaddr_t unspec;
@@ -46,10 +45,10 @@ PROCESS(print_rfusage_process, "Print RF energest");
 AUTOSTART_PROCESSES(&coap_tester_process, &print_rfusage_process);
 /*---------------------------------------------------------------------------*/
 static void
-send_coap_message(int confirm, int uri_len)
+send_coap_message(int confirm, uint32_t seq)
 {
   static coap_packet_t request[1];
-  static char* uri[LEN_MAX];
+  static char uri[REQ_LEN];
 
   if(uip_ipaddr_cmp(&remote, &unspec)) {
     printf("error: unknown remote\n");
@@ -60,7 +59,12 @@ send_coap_message(int confirm, int uri_len)
     return;
   }
 
-  strncpy(uri, REALLY_LONG_URI, uri_len);
+  char seqbuf[16];
+  sprintf(seqbuf, "%lu", seq);
+  strncpy(uri, REALLY_LONG_URI, REQ_LEN);
+  strncpy(&uri[strlen("/update/")], seqbuf, strlen(seqbuf));
+
+  printf("Requesting uri seq %lu: %s\n", seq, uri);
   coap_init_message(request, COAP_TYPE_NON, COAP_GET, 0);
   coap_set_header_uri_path(request, uri);
   coap_set_header_block2(request, 0, 0, REST_MAX_CHUNK_SIZE);
@@ -132,18 +136,13 @@ PROCESS_THREAD(coap_tester_process, ev, data)
   ctimer_set(&broadcast_ctimer, 1 * CLOCK_SECOND, send_broadcast, NULL); /* Start sending broadcasts */
 
   while(1) {
-    static int current_len = LEN_MIN;
+    static uint32_t current_seq = 0;
+    current_seq++;
 
     etimer_set(&periodic_timer, SEND_INTERVAL);
     PROCESS_WAIT_UNTIL(etimer_expired(&periodic_timer));
 
-    printf("Requesting uri_len %d\n", current_len);
-    send_coap_message(0, current_len);
-
-    current_len++;
-    if(current_len > LEN_MAX) {
-      current_len = LEN_MIN;
-    }
+    send_coap_message(0, current_seq);
   }
 
   PROCESS_END();

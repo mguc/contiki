@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 /*---------------------------------------------------------------------------*/
 #define PORT_BROADCAST 200
@@ -41,8 +42,10 @@ update_handler(void *request, void *response, uint8_t *buffer, uint16_t preferre
   rest_request_t* req = (rest_request_t*)request;
 
   if(req) {
-    int len = (int)(1 + req->uri_path_len + req->uri_query_len);
-    printf("update_handler: uri_len %d\n", len);
+    uint32_t seq;
+    char* seqptr = (char*)&req->uri_path[strlen("update/")];
+    seq = (uint32_t)strtol(seqptr, NULL, 10);
+    printf("update_handler: received seq %lu: %s\n", seq, req->uri_path);
   } else {
     printf("update_handler: received unknown\n");
   }
