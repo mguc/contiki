@@ -258,7 +258,7 @@ packet_sent(void *ptr, int status, int num_transmissions)
           PRINTF("csma: rexmit collision %d\n", n->transmissions);
           break;
         case MAC_TX_NOACK:
-          PRINTF("csma: rexmit noack %d\n", n->transmissions);
+          printf("XXX csma: rexmit noack %d\n", n->transmissions);
           break;
         default:
           PRINTF("csma: rexmit err %d, %d\n", status, n->transmissions);
