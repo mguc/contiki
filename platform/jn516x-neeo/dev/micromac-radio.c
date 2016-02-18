@@ -409,14 +409,6 @@ transmit(unsigned short payload_len)
     printf("XXX %s %d tx_in_progress\n", __FILE__, __LINE__);
     return RADIO_TX_COLLISION;
   }
-
-  /* XXX Make sure we have a spare buffer available, e.g. to receive an ack
-   * message*/
-  if(ringbufindex_full(&input_ringbuf)) {
-    printf("XXX ringbufindex_full()! don't send\n");
-    return RADIO_TX_COLLISION;
-  }
-
   tx_in_progress = 1;
 
   /* Energest */
