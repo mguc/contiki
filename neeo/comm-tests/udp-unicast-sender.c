@@ -47,7 +47,7 @@
 
 /*---------------------------------------------------------------------------*/
 #define UDP_PORT 124
-#define SEND_INTERVAL (CLOCK_SECOND / 2)
+#define SEND_INTERVAL (CLOCK_SECOND)
 
 #ifdef UDP_UNICAST_DESTINATION_IP
 #define _QUOTEME(x) #x
@@ -56,8 +56,8 @@
 #endif /* UDP_UNICAST_DESTINATION_IP */
 
 /* Configuration */
-#define MIN_SIZE 1
-#define MAX_SIZE 110
+#define MIN_SIZE 200
+#define MAX_SIZE 400
 #define PRINT_BLOCK_SIZE 10
 
 #define NR_LOGS (MAX_SIZE - MIN_SIZE + 1)
