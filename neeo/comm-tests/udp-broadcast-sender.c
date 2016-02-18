@@ -180,7 +180,6 @@ PROCESS_THREAD(print_rfusage_process, ev, data)
             (int)(rf_percentage / 10),
             (int)(rf_percentage % 10));
     printf("RF channel %d\n", get_rf_channel());
-    printf("PAN ID %04x\n", csl_mlme_panid());
   }
 
   PROCESS_END();

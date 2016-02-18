@@ -40,11 +40,6 @@
 
 #include "net/rime/rimestats.h"
 
-#define BECOME_MUCHA_AUTH 0
-#if BECOME_MUCHA_AUTH
-#include "csl-mucha.h"
-#endif /* BECOME_MUCHA_AUTH */
-
 #include <stdio.h>
 #include <string.h>
 
@@ -163,10 +158,6 @@ PROCESS_THREAD(udp_broadcast_process, ev, data)
 {
   PROCESS_BEGIN();
 
-#if BECOME_MUCHA_AUTH
-  csl_mucha_set_authority(CSL_MUCHA_SYNCH_ROOT);
-#endif /* BECOME_MUCHA_AUTH */
-
   simple_udp_register(&broadcast_connection, UDP_PORT, NULL, UDP_PORT,
                       receiver);
   printf("Starting UDP broadcast receiever.\n");
@@ -233,7 +224,6 @@ PROCESS_THREAD(print_rfusage_process, ev, data)
             (int)(rf_percentage / 10),
             (int)(rf_percentage % 10));
     printf("RF channel %d\n", get_rf_channel());
-    printf("PAN ID %04x\n", csl_mlme_panid());
 
   }
 
