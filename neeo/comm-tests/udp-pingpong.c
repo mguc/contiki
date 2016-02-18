@@ -76,7 +76,7 @@ static struct udp_socket s;
 static int unicast_current_size = UNICAST_MIN_SIZE;
 
 /* stats */
-#define TEST_PERIOD_SECS 30
+#define TEST_PERIOD_SECS 5
 
 static int sent;
 static int received;
@@ -256,25 +256,21 @@ PROCESS_THREAD(print_stats_process, ev, data)
       time = 1;
     }
 
-    cpu_percentage = (cpu * 1000) / time;
-    rf_percentage = (radio * 1000) / time;
+    cpu_percentage = (cpu * 100UL) / time;
+    rf_percentage = (radio * 100UL) / time;
 
-    if(cpu_percentage > 1000) {
-      cpu_percentage = 1000;
+    if(cpu_percentage > 100) {
+      cpu_percentage = 100;
     }
-    if(rf_percentage > 1000) {
-      rf_percentage = 1000;
+    if(rf_percentage > 100) {
+      rf_percentage = 100;
     }
 
     printf("-------------\n");
 
     /* Print */
-    printf("RF percentage %d.%d\n",
-           (int)(rf_percentage / 10),
-           (int)(rf_percentage % 10));
-    printf("CPU percentage %d.%d\n",
-           (int)(cpu_percentage / 10),
-           (int)(cpu_percentage % 10));
+    printf("RF percentage %d\n", (int)rf_percentage);
+    printf("CPU percentage %d\n", (int)cpu_percentage);
 
     /* stats */
     printf("Total number of timeouts until now: %d\n", timeouts);
