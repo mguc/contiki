@@ -194,6 +194,7 @@ static void radio_interrupt_handler(uint32 mac_event);
 static int get_detected_energy(void);
 static int get_rssi(void);
 static void read_last_rssi(void);
+static int cca(void);
 
 /*---------------------------------------------------------------------------*/
 PROCESS(micromac_radio_process, "micromac_radio_driver");
@@ -659,7 +660,7 @@ get_txpower(void)
 #if (JENNIC_CHIP == JN5169)
   /* Actual tx power value rounded to nearest integer number */
   const static int8 power_table [] = {
-    -32, -30, -29, -29,   /* -32 .. -29 */ 
+    -32, -30, -29, -29,   /* -32 .. -29 */
     -28, -28, -28, -28,   /* -28 .. -25 */
     -21, -21, -21,  -2,   /* -24 .. -21 */
     -20, -19, -18, -17,   /* -20 .. -17 */
