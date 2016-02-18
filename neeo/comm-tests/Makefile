@@ -7,7 +7,7 @@ ifeq ($(WITH_FEM),1)
   CFLAGS += -DRADIO_TEST_MODE=RADIO_TEST_MODE_HIGH_PWR
 endif
 
-APPS+=replong
+APPS += replong er-coap rest-engine
 
 CONTIKI=../..
 
