@@ -5,9 +5,14 @@
 #define RIMESTATS_CONF_ENABLED 1
 #define RIMESTATS_CONF_ON 1
 
-#define NULLRDC_CONF_802154_AUTOACK  1
-#define NULLRDC_CONF_SEND_802154_ACK 1
-#define MICROMAC_CONF_AUTOACK 0
+/* Configure the radio to *not* generate or handle acks.
+ * Instead our RDC should both transmit and receive acks. */
+#define NULLRDC_CONF_802154_AUTOACK  1 /* handle incoming acks */
+#define NULLRDC_CONF_SEND_802154_ACK 1 /* send acks */
+#define MICROMAC_CONF_AUTOACK 0 /* don't send acks */
+#define CC2420_CONF_AUTOACK 0 /* don't send acks */
+#define NULLRDC_CONF_ACK_WAIT_TIME (4UL * RTIMER_SECOND / 1000UL)
+/*#define CONTIKIMAC_CONF_SEND_SW_ACK 1 <-- TODO Need testing */
 
 #define DEFINE_PUTCHAR_TO_SLIP 1
 #undef SLIP_BRIDGE_CONF_NO_PUTCHAR
