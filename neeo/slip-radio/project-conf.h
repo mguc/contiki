@@ -30,21 +30,17 @@
 #ifndef PROJECT_CONF_H_
 #define PROJECT_CONF_H_
 
+#include "../neeo-conf.h"
+
 #define SLIP_RADIO_CONF_NO_PUTCHAR 1
-
-#undef UIP_CONF_BUFFER_SIZE
-#define UIP_CONF_BUFFER_SIZE    1280
-
-#undef UIP_CONF_ROUTER
-#define UIP_CONF_ROUTER                 0
 
 #define CMD_CONF_OUTPUT slip_radio_cmd_output
 
 #define CMD_CONF_HANDLERS slip_radio_cmd_handler
 
-#undef NETSTACK_CONF_MAC
-#undef NETSTACK_CONF_RDC
-#undef NETSTACK_CONF_FRAMER
+// #undef NETSTACK_CONF_MAC
+// #undef NETSTACK_CONF_RDC
+// #undef NETSTACK_CONF_FRAMER
 #undef NETSTACK_CONF_NETWORK
 
 // The difference between nullrdc and contikimac is the way of accessing the medium (radio). Nullrdc keeps the radio turned on in RX mode
@@ -53,34 +49,12 @@
 // During transmission, radio starts TX only if there is a silence in the air.
 // This differences results in different power consumption (radio in RX mode consumes more power than in TX mode).
 
-#define NETSTACK_CONF_MAC csma_driver
-#define NETSTACK_CONF_RDC nullrdc_driver
-#define NETSTACK_CONF_FRAMER no_framer
+// #define NETSTACK_CONF_MAC csma_driver
+// #define NETSTACK_CONF_RDC nullrdc_driver
+// #define NETSTACK_CONF_FRAMER no_framer
 #define NETSTACK_CONF_NETWORK slipnet_driver
-
-#undef UART_BAUD_RATE
-#define UART_BAUD_RATE UART_RATE_115200
-#undef UART1_BAUD_RATE
-#define UART1_BAUD_RATE UART_RATE_115200
-
-#undef IEEE802154_CONF_PANID
-#define IEEE802154_CONF_PANID 0xabcd
-
-#undef RF_CHANNEL
-#define RF_CHANNEL 14
-
-#undef   MICROMAC_CONF_CHANNEL
-#define  MICROMAC_CONF_CHANNEL  RF_CHANNEL
-
-#undef   MICROMAC_CONF_AUTOACK
-#define  MICROMAC_CONF_AUTOACK 0
-
-#undef MIRCOMAC_CONF_BUF_NUM
-#define MIRCOMAC_CONF_BUF_NUM 16
 
 #undef UART_XONXOFF_FLOW_CTRL
 #define UART_XONXOFF_FLOW_CTRL 0
-
-#include "../neeo-conf.h"
 
 #endif /* PROJECT_CONF_H_ */

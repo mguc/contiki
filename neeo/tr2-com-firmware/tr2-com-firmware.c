@@ -117,6 +117,7 @@ PROCESS_THREAD(query_process, ev, data)
   msg_t msg_resp;
   uint8_t resp[16];
   int ret, i;
+  static struct etimer dag_registered_timer;
 
   PROCESS_BEGIN();
   INFOT("INIT: Starting query process\n");
@@ -134,6 +135,14 @@ PROCESS_THREAD(query_process, ev, data)
   uip_ds6_init();
   uip_nd6_init();
   rpl_init();
+
+
+  while(rpl_get_any_dag() == NULL){
+	  INFOT("Waiting to join a network\n");
+	  dis_output(NULL);
+	  etimer_set(&dag_registered_timer, CLOCK_SECOND);
+	  PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&dag_registered_timer));
+  }
 
   while(1) {
     PROCESS_YIELD();

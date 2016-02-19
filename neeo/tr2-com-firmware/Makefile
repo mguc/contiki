@@ -37,6 +37,7 @@ PROJECT_SOURCEFILES += serial-protocol.c
 PROJECT_SOURCEFILES += rtc.c
 PROJECT_SOURCEFILES += rest_server.c
 PROJECT_SOURCEFILES += tr2-debug.c
+PROJECT_SOURCEFILES += rimestats.c
 
 CONTIKI_WITH_IPV6 = 1
 include $(CONTIKI)/Makefile.include

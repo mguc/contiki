@@ -1,5 +1,5 @@
-#ifndef PROJECT_TR2_COM_FIRMWARE_H
-#define PROJECT_TR2_COM_FIRMWARE_H
+#ifndef PROJECT_NEEO_H
+#define PROJECT_NEEO_H
 
 #define ENERGEST_CONF_ON 1
 #define RIMESTATS_CONF_ENABLED 1
@@ -10,21 +10,21 @@
 #define NULLRDC_CONF_802154_AUTOACK  1 /* handle incoming acks */
 #define NULLRDC_CONF_ACK_WAIT_TIME (4UL * RTIMER_SECOND / 1000UL)
 #undef MIRCOMAC_CONF_BUF_NUM
-#define MIRCOMAC_CONF_BUF_NUM 8
+#define MIRCOMAC_CONF_BUF_NUM 4
 
 /* AES-CCM via NonCoreSec Contiki core MODULE
  * XXX Note that the network key *must* be set in the application */
+#if 0
 #define LLSEC802154_CONF_SECURITY_LEVEL 6
 #define NETSTACK_CONF_LLSEC noncoresec_driver
 #undef NETSTACK_CONF_FRAMER
 #define NETSTACK_CONF_FRAMER noncoresec_framer
+#endif
 
 #define DEFINE_PUTCHAR_TO_SLIP 1
 #undef SLIP_BRIDGE_CONF_NO_PUTCHAR
 #define SLIP_BRIDGE_CONF_NO_PUTCHAR 0
 
-#define RF_CHANNEL 25
-#define CC2538_RF_CHANNEL 25
 #define IEEE802154_CONF_PANID           0xABCD
 
 #define MAC_CONFIG_NULLRDC                    0
@@ -46,16 +46,13 @@
 
 #define NETSTACK_CONF_MAC     csma_driver
 #define NETSTACK_CONF_RDC     nullrdc_driver
-//#define NETSTACK_CONF_FRAMER  framer_802154
+#define NETSTACK_CONF_FRAMER  framer_802154
 
 #elif MAC_CONFIG == MAC_CONFIG_CONTIKIMAC
 
 #define NETSTACK_CONF_MAC     csma_driver
 #define NETSTACK_CONF_RDC     contikimac_driver
-//#define NETSTACK_CONF_FRAMER  contikimac_framer
-
-#undef MIRCOMAC_CONF_BUF_NUM
-#define MIRCOMAC_CONF_BUF_NUM 16
+#define NETSTACK_CONF_FRAMER  contikimac_framer
 
 #else
 
@@ -83,25 +80,13 @@
 
 #undef UIP_CONF_BUFFER_SIZE
 #define UIP_CONF_BUFFER_SIZE    1280
-#undef UIP_CONF_ROUTER
-#define UIP_CONF_ROUTER 0
 
 /* CoAP configuration */
+#undef REST_MAX_CHUNK_SIZE
 #define REST_MAX_CHUNK_SIZE     1024
 #undef COAP_MAX_HEADER_SIZE
-#define COAP_MAX_HEADER_SIZE 	200
+#define COAP_MAX_HEADER_SIZE 	  200
 
 #endif /* CONTIKI_TARGET_EXP5438 */
 
-#define CSMA_CONF_MAX_NEIGHBOR_QUEUES 8
-
-#undef RPL_DIS_INTERVAL_CONF
-#define RPL_DIS_INTERVAL_CONF 5
-
-/* default COAP_RESPONSE_TIMEOUT is 3 */
-#define COAP_RESPONSE_TIMEOUT       3
-
-/* default COAP_MAX_RETRANSMIT is 4 */
-#define COAP_MAX_RETRANSMIT         3
-
-#endif /* PROJECT_TR2_COM_FIRMWARE_H */
+#endif /* PROJECT_NEEO_H */

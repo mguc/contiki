@@ -1,4 +1,4 @@
-CONTIKI_PROJECT = coap-receiver coap-sender udp-pingpong udp-unicast-receiver udp-unicast-sender udp-broadcast-receiver udp-broadcast-sender
+CONTIKI_PROJECT = coap-receiver coap-sender udp-pingpong udp-unicast-receiver udp-unicast-sender udp-broadcast-receiver udp-broadcast-sender aes-brain aes-remote
 all: $(CONTIKI_PROJECT)
 
 CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
