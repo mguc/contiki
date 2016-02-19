@@ -17,29 +17,17 @@
 #define PORT_INVITATIONS 200
 #define PORT_ENCRYPTED 201
 
-#define SEND_INVITATION_PERIOD (30 * CLOCK_SECOND)
-#define SEND_ENCRYPTED_PERIOD (13 * CLOCK_SECOND)
+#define SEND_ENCRYPTED_PERIOD (27 * CLOCK_SECOND)
 
 static uip_ipaddr_t multicast_addr;
 /*---------------------------------------------------------------------------*/
 static struct udp_socket invitation;
-static struct ctimer invitation_ctimer;
 /*---------------------------------------------------------------------------*/
 static struct udp_socket encrypted;
 static struct ctimer encrypted_ctimer;
 /*---------------------------------------------------------------------------*/
-PROCESS(aes_brain_process, "Test invitations brain process");
-AUTOSTART_PROCESSES(&aes_brain_process);
-/*---------------------------------------------------------------------------*/
-static void
-send_invitation(void* ptr)
-{
-  char* buf = "I am brain, you are invited, come join me";
-  printf("sending invitation: '%s'\n", buf);
-  udp_socket_sendto(&invitation, buf, strlen(buf), &multicast_addr,
-                    PORT_INVITATIONS);
-  ctimer_set(&invitation_ctimer, SEND_INVITATION_PERIOD, send_invitation, NULL);
-}
+PROCESS(aes_remote_process, "Test invitations remote process");
+AUTOSTART_PROCESSES(&aes_remote_process);
 /*---------------------------------------------------------------------------*/
 static void
 invitation_receiver(struct udp_socket *c,
@@ -54,16 +42,25 @@ invitation_receiver(struct udp_socket *c,
   printf("got invitation message from: ");
   uip_debug_ipaddr_print(sender_addr);
   printf("\n");
+
+  printf("TODO XXX JOIN THIS NETWORK?\n");
 }
 /*---------------------------------------------------------------------------*/
 static void
 send_encrypted(void* ptr)
 {
-  char* buf = "I am brain, and this is just some regular encrypted data";
+  ctimer_set(&encrypted_ctimer, SEND_ENCRYPTED_PERIOD, send_encrypted, NULL);
+
+  if(rpl_get_any_dag() == NULL) {
+    /* We only send data if we've joined RPL */
+    printf("can't send encrypted, no RPL network\n");
+    return;
+  }
+
+  char* buf = "I am remote, and this is just some regular encrypted data";
   printf("sending encrypted: '%s'\n", buf);
   udp_socket_sendto(&encrypted, buf, strlen(buf), &multicast_addr,
                     PORT_ENCRYPTED);
-  ctimer_set(&encrypted_ctimer, SEND_ENCRYPTED_PERIOD, send_encrypted, NULL);
 }
 /*---------------------------------------------------------------------------*/
 static void
@@ -81,36 +78,30 @@ encrypted_receiver(struct udp_socket *c,
   printf(": '%s'\n", data);
 }
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(aes_brain_process, ev, data)
+PROCESS_THREAD(aes_remote_process, ev, data)
 {
   PROCESS_BEGIN();
 
-  /* This is the "brain".
-   * In contrast to the Neeo brain, this application creates a RPL network.
-   * Part of this functionality should probably be moved to the NBR, or even
-   * to the main MCU (the nodejs process).
+  /* This is the "remote".
+   * This device is just an ordinary RPL-capable device, that joins any network
+   * it can see. The problem is that, at startup, it cannot see any network.
    *
-   * This brain handles two different AES keys: one pre-defined key used to invite
-   * new Remote-devices to the network, and one random per-brain specific key
-   * which is used for the main communication.
+   * Via Brain-sent invites it can read out a network key, and when applied, it
+   * can finally join a RPL network.
    *
    * Both keys should be permanently stored and supplied by the main MCU.
    */
 
-  rpl_dag_root_init_dag();
-  printf("initiating rpl dag\n");
-
   uip_create_linklocal_allnodes_mcast(&multicast_addr);
 
-  /* We're going to be sending invitation messages periodically via UDP.
-   * In the end, we want to send these on-demand only */
+  /* We're going to be listening for invitation messages via UDP */
   udp_socket_register(&invitation, NULL, invitation_receiver);
   udp_socket_bind(&invitation, PORT_INVITATIONS);
   udp_socket_connect(&invitation, NULL, PORT_INVITATIONS);
-  ctimer_set(&invitation_ctimer, 1 * CLOCK_SECOND, send_invitation, NULL); /* Start sending invitations */
 
   /* We're also sending out regular network data periodically.
-   * The Remotes cannot receive these unless they have joined the network. */
+   * The Brain (or any other device) cannot receive these unless we're using
+   * the proper network key */
   udp_socket_register(&encrypted, NULL, encrypted_receiver);
   udp_socket_bind(&encrypted, PORT_ENCRYPTED);
   udp_socket_connect(&encrypted, NULL, PORT_ENCRYPTED);
