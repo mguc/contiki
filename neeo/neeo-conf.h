@@ -76,6 +76,10 @@
 #undef   MICROMAC_CONF_CHANNEL
 #define  MICROMAC_CONF_CHANNEL  RF_CHANNEL
 
+#if CONTIKI_TARGET_EXP5438
+/* Let's keep the default settings, to preserve some memory for simulations */
+#else /* CONTIKI_TARGET_EXP5438 */
+
 #undef UIP_CONF_BUFFER_SIZE
 #define UIP_CONF_BUFFER_SIZE    1280
 #undef UIP_CONF_ROUTER
@@ -85,6 +89,8 @@
 #define REST_MAX_CHUNK_SIZE     1024
 #undef COAP_MAX_HEADER_SIZE
 #define COAP_MAX_HEADER_SIZE 	200
+
+#endif /* CONTIKI_TARGET_EXP5438 */
 
 #define CSMA_CONF_MAX_NEIGHBOR_QUEUES 8
 
