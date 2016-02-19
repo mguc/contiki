@@ -80,4 +80,7 @@
 
 #undef UART_XONXOFF_FLOW_CTRL
 #define UART_XONXOFF_FLOW_CTRL 0
+
+#include "../neeo-conf.h"
+
 #endif /* PROJECT_CONF_H_ */

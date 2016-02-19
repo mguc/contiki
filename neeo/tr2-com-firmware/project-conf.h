@@ -73,4 +73,6 @@
 /* default COAP_MAX_RETRANSMIT is 4 */
 #define COAP_MAX_RETRANSMIT         3
 
+#include "../neeo-conf.h"
+
 #endif /* PROJECT_TR2_COM_FIRMWARE_H */

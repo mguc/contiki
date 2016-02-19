@@ -133,7 +133,7 @@ slip_radio_cmd_handler(const uint8_t *data, int len)
              data[2], packetbuf_datalen());
 
       /* parse frame before sending to get addresses, etc. */
-      no_framer.parse();
+      framer_802154.parse();
       NETSTACK_LLSEC.send(packet_sent, &packet_ids[packet_pos]);
 
       packet_pos++;
