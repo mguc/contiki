@@ -8,20 +8,14 @@
 /* Configure the radio to *not* generate or handle acks.
  * Instead our RDC should both transmit and receive acks. */
 #define NULLRDC_CONF_802154_AUTOACK  1 /* handle incoming acks */
-//#define NULLRDC_CONF_SEND_802154_ACK 1 /* send acks */
-//#define MICROMAC_CONF_AUTOACK 0 /* don't send acks */
-//#undef CC2420_CONF_AUTOACK
-//#define CC2420_CONF_AUTOACK 0 /* don't send acks */
 #define NULLRDC_CONF_ACK_WAIT_TIME (4UL * RTIMER_SECOND / 1000UL)
 #undef MIRCOMAC_CONF_BUF_NUM
 #define MIRCOMAC_CONF_BUF_NUM 8
-/*#define CONTIKIMAC_CONF_SEND_SW_ACK 1 <-- TODO Need testing */
 
 #define DEFINE_PUTCHAR_TO_SLIP 1
 #undef SLIP_BRIDGE_CONF_NO_PUTCHAR
 #define SLIP_BRIDGE_CONF_NO_PUTCHAR 0
 
-#define MKEYSEC_CONF_DEFAULT_KEY 1
 #define RF_CHANNEL 25
 #define CC2538_RF_CHANNEL 25
 #define IEEE802154_CONF_PANID           0xABCD
