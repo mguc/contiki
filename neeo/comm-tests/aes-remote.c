@@ -10,8 +10,16 @@
 #include "net/ip/udp-socket.h"
 #include "net/ip/uip-debug.h"
 
+#include "net/llsec/llsec802154.h"
+#include "lib/ccm-star.h"
+#include "net/llsec/ccm-star-packetbuf.h"
+#include "net/mac/frame802154.h"
+
 #include <stdio.h>
 #include <string.h>
+
+#define AES_INVITE_KEY ((uint8_t*)"abbaabbaabbaabba") /* store this in static mem */
+/*#define AES_HOUSEHOLD_KEY "we don't know this one yet" */
 
 /*---------------------------------------------------------------------------*/
 #define PORT_INVITATIONS 200
@@ -41,7 +49,7 @@ invitation_receiver(struct udp_socket *c,
 {
   printf("got invitation message from: ");
   uip_debug_ipaddr_print(sender_addr);
-  printf("\n");
+  printf(": '%s'\n", data);
 
   printf("TODO XXX JOIN THIS NETWORK?\n");
 }
@@ -91,6 +99,9 @@ PROCESS_THREAD(aes_remote_process, ev, data)
    *
    * Both keys should be permanently stored and supplied by the main MCU.
    */
+
+  /* Apply invite key */
+  CCM_STAR.set_key(AES_INVITE_KEY);
 
   uip_create_linklocal_allnodes_mcast(&multicast_addr);
 

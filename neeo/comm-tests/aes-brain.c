@@ -10,8 +10,16 @@
 #include "net/ip/udp-socket.h"
 #include "net/ip/uip-debug.h"
 
+#include "net/llsec/llsec802154.h"
+#include "lib/ccm-star.h"
+#include "net/llsec/ccm-star-packetbuf.h"
+#include "net/mac/frame802154.h"
+
 #include <stdio.h>
 #include <string.h>
+
+#define AES_INVITE_KEY ((uint8_t*)"abbaabbaabbaabba") /* store this in static mem */
+#define AES_HOUSEHOLD_KEY ((uint8_t*)"yoyoyoyoyoyoyoyo") /* store this in static mem */
 
 /*---------------------------------------------------------------------------*/
 #define PORT_INVITATIONS 200
@@ -24,6 +32,7 @@ static uip_ipaddr_t multicast_addr;
 /*---------------------------------------------------------------------------*/
 static struct udp_socket invitation;
 static struct ctimer invitation_ctimer;
+static struct ctimer return_ctimer;
 /*---------------------------------------------------------------------------*/
 static struct udp_socket encrypted;
 static struct ctimer encrypted_ctimer;
@@ -32,13 +41,24 @@ PROCESS(aes_brain_process, "Test invitations brain process");
 AUTOSTART_PROCESSES(&aes_brain_process);
 /*---------------------------------------------------------------------------*/
 static void
+return_to_household_key(void* ptr)
+{
+  CCM_STAR.set_key(AES_HOUSEHOLD_KEY);
+}
+/*---------------------------------------------------------------------------*/
+static void
 send_invitation(void* ptr)
 {
+  CCM_STAR.set_key(AES_INVITE_KEY);
   char* buf = "I am brain, you are invited, come join me";
   printf("sending invitation: '%s'\n", buf);
   udp_socket_sendto(&invitation, buf, strlen(buf), &multicast_addr,
                     PORT_INVITATIONS);
-  ctimer_set(&invitation_ctimer, SEND_INVITATION_PERIOD, send_invitation, NULL);
+
+  ctimer_set(&return_ctimer, 3 * CLOCK_SECOND, return_to_household_key, NULL);
+
+  /* Invite again? */
+  /*ctimer_set(&invitation_ctimer, SEND_INVITATION_PERIOD, send_invitation, NULL);*/
 }
 /*---------------------------------------------------------------------------*/
 static void
@@ -100,6 +120,9 @@ PROCESS_THREAD(aes_brain_process, ev, data)
   rpl_dag_root_init_dag();
   printf("initiating rpl dag\n");
 
+  /* Apply household key */
+  CCM_STAR.set_key(AES_HOUSEHOLD_KEY);
+
   uip_create_linklocal_allnodes_mcast(&multicast_addr);
 
   /* We're going to be sending invitation messages periodically via UDP.
@@ -115,6 +138,9 @@ PROCESS_THREAD(aes_brain_process, ev, data)
   udp_socket_bind(&encrypted, PORT_ENCRYPTED);
   udp_socket_connect(&encrypted, NULL, PORT_ENCRYPTED);
   ctimer_set(&encrypted_ctimer, 1 * CLOCK_SECOND, send_encrypted, NULL); /* Start sending encrypted data */
+
+  printf("I'll send a single invitation in 30 seconds...\n");
+  ctimer_set(&invitation_ctimer, 30 * CLOCK_SECOND, send_invitation, NULL);
 
   PROCESS_WAIT_UNTIL(0);
 
