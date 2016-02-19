@@ -12,6 +12,13 @@
 #undef MIRCOMAC_CONF_BUF_NUM
 #define MIRCOMAC_CONF_BUF_NUM 8
 
+/* AES-CCM via NonCoreSec Contiki core MODULE
+ * XXX Note that the network key *must* be set in the application */
+#define LLSEC802154_CONF_SECURITY_LEVEL 6
+#define NETSTACK_CONF_LLSEC noncoresec_driver
+#undef NETSTACK_CONF_FRAMER
+#define NETSTACK_CONF_FRAMER noncoresec_framer
+
 #define DEFINE_PUTCHAR_TO_SLIP 1
 #undef SLIP_BRIDGE_CONF_NO_PUTCHAR
 #define SLIP_BRIDGE_CONF_NO_PUTCHAR 0
@@ -27,7 +34,7 @@
 
 #undef NETSTACK_CONF_MAC
 #undef NETSTACK_CONF_RDC
-#undef NETSTACK_CONF_FRAMER
+//#undef NETSTACK_CONF_FRAMER
 
 // The difference between nullrdc and contikimac is the way of accessing the medium (radio). Nullrdc keeps the radio turned on in RX mode
 // all the time and listen all activity on the radio. Of course during transmission the radio is switched to TX mode.
@@ -39,13 +46,13 @@
 
 #define NETSTACK_CONF_MAC     csma_driver
 #define NETSTACK_CONF_RDC     nullrdc_driver
-#define NETSTACK_CONF_FRAMER  framer_802154
+//#define NETSTACK_CONF_FRAMER  framer_802154
 
 #elif MAC_CONFIG == MAC_CONFIG_CONTIKIMAC
 
 #define NETSTACK_CONF_MAC     csma_driver
 #define NETSTACK_CONF_RDC     contikimac_driver
-#define NETSTACK_CONF_FRAMER  contikimac_framer
+//#define NETSTACK_CONF_FRAMER  contikimac_framer
 
 #undef MIRCOMAC_CONF_BUF_NUM
 #define MIRCOMAC_CONF_BUF_NUM 16
