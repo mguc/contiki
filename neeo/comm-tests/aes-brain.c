@@ -43,6 +43,7 @@ AUTOSTART_PROCESSES(&aes_brain_process);
 static void
 return_to_household_key(void* ptr)
 {
+  printf("deactivated invitation key, now returning to household key\n");
   CCM_STAR.set_key(AES_HOUSEHOLD_KEY);
 }
 /*---------------------------------------------------------------------------*/
@@ -50,9 +51,11 @@ static void
 send_invitation(void* ptr)
 {
   CCM_STAR.set_key(AES_INVITE_KEY);
-  char* buf = "I am brain, you are invited, come join me";
-  printf("sending invitation: '%s'\n", buf);
-  udp_socket_sendto(&invitation, buf, strlen(buf), &multicast_addr,
+
+  char buf[16];
+  memcpy(buf, AES_HOUSEHOLD_KEY, 16);
+  printf("sending invitation containing household key now\n");
+  udp_socket_sendto(&invitation, buf, 16, &multicast_addr,
                     PORT_INVITATIONS);
 
   ctimer_set(&return_ctimer, 3 * CLOCK_SECOND, return_to_household_key, NULL);
@@ -71,9 +74,10 @@ invitation_receiver(struct udp_socket *c,
              const uint8_t *data,
              uint16_t datalen)
 {
-  printf("got invitation message from: ");
+  /* I'm the brain, I don't care about invitations from other devices */
+  /*printf("got invitation message from: ");
   uip_debug_ipaddr_print(sender_addr);
-  printf("\n");
+  printf("\n");*/
 }
 /*---------------------------------------------------------------------------*/
 static void

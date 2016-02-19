@@ -20,6 +20,7 @@
 
 #define AES_INVITE_KEY ((uint8_t*)"abbaabbaabbaabba") /* store this in static mem */
 /*#define AES_HOUSEHOLD_KEY "we don't know this one yet" */
+static uint8_t aes_household_key[16];
 
 /*---------------------------------------------------------------------------*/
 #define PORT_INVITATIONS 200
@@ -47,11 +48,18 @@ invitation_receiver(struct udp_socket *c,
              const uint8_t *data,
              uint16_t datalen)
 {
+  if(datalen != 16) {
+    printf("error: bad length of invitation message: %u\n", datalen);
+    return;
+  }
+
   printf("got invitation message from: ");
   uip_debug_ipaddr_print(sender_addr);
   printf(": '%s'\n", data);
 
-  printf("TODO XXX JOIN THIS NETWORK?\n");
+  printf("applying household key now\n");
+  memcpy(aes_household_key, data, 16);
+  CCM_STAR.set_key(aes_household_key);
 }
 /*---------------------------------------------------------------------------*/
 static void
