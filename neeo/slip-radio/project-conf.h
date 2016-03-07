@@ -40,7 +40,7 @@
 
 // #undef NETSTACK_CONF_MAC
 // #undef NETSTACK_CONF_RDC
-// #undef NETSTACK_CONF_FRAMER
+#undef NETSTACK_CONF_FRAMER
 #undef NETSTACK_CONF_NETWORK
 
 // The difference between nullrdc and contikimac is the way of accessing the medium (radio). Nullrdc keeps the radio turned on in RX mode
@@ -51,7 +51,7 @@
 
 // #define NETSTACK_CONF_MAC csma_driver
 // #define NETSTACK_CONF_RDC nullrdc_driver
-// #define NETSTACK_CONF_FRAMER no_framer
+#define NETSTACK_CONF_FRAMER no_framer
 #define NETSTACK_CONF_NETWORK slipnet_driver
 
 #undef UART_XONXOFF_FLOW_CTRL
