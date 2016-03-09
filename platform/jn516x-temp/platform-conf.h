@@ -57,10 +57,6 @@
 #define MICROMAC_CONF_CHANNEL 26
 #endif
 
-#ifdef RF_CHANNEL
-#define MICROMAC_CONF_CHANNEL RF_CHANNEL
-#endif
-
 /* 32kHz or 16MHz rtimers? */
 #ifdef RTIMER_CONF_USE_32KHZ
 #define RTIMER_USE_32KHZ  RTIMER_CONF_USE_32KHZ
@@ -68,7 +64,11 @@
 #define RTIMER_USE_32KHZ  0
 #endif
 
-/* Put the device in a sleep mode in idle periods? */
+/* Put the device in a sleep mode in idle periods?
+ * If RTIMER_USE_32KHZ is set, the device runs all the time on the 32 kHz oscillator.
+ * If RTIMER_USE_32KHZ is not set, the device runs on the 32 kHz oscillator during sleep,
+ * and switches back to the 32 MHz oscillator (16 MHz rtimer) at wakeup.
+ *  */
 #ifdef JN516X_SLEEP_CONF_ENABLED
 #define JN516X_SLEEP_ENABLED JN516X_SLEEP_CONF_ENABLED
 #else
@@ -84,8 +84,8 @@
 typedef uint32_t rtimer_clock_t;
 #define RTIMER_CLOCK_LT(a, b)     ((int32_t)((a) - (b)) < 0)
 
-/* 10ms timer tick */
-#define CLOCK_CONF_SECOND 100
+/* 8ms timer tick */
+#define CLOCK_CONF_SECOND 125
 
 #if JN516X_EXTERNAL_CRYSTAL_OSCILLATOR
 #define JN516X_XOSC_SECOND 32768
@@ -98,7 +98,7 @@ typedef uint32_t rtimer_clock_t;
 #define RADIO_TO_RTIMER(X)  ((X) * (JN516X_XOSC_SECOND) / 62500)
 #else
  /* RTIMER 16M = 256 * 62500(RADIO)  == 2^8 * 62500 */
-#define RADIO_TO_RTIMER(X)                      ((rtimer_clock_t)((X) << (int32_t)8L))
+#define RADIO_TO_RTIMER(X)  ((rtimer_clock_t)((X) << (int32_t)8L))
 #endif
 
 /* If the timer base a binary 32kHz clock, compensate for this base drift */
@@ -116,14 +116,12 @@ typedef uint32_t rtimer_clock_t;
 #define DR_11744_DIO6 16
 #define DR_11744_DIO7 17
 
- /* Enable power amplifier of JN5168 M05 and M06 modules */
-#ifndef RADIO_TEST_MODE
- #if defined(JN5168_M05) || defined(JN5168_M06)
- #define RADIO_TEST_MODE RADIO_TEST_MODE_HIGH_PWR
- #else
- #define RADIO_TEST_MODE RADIO_TEST_MODE_DISABLED
- #endif
-#endif /* RADIO_TEST_MODE */
+/* Enable power amplifier of JN5168 M05 and M06 modules */
+#if defined(JN5168_M05) || defined(JN5168_M06)
+#define RADIO_TEST_MODE RADIO_TEST_MODE_HIGH_PWR
+#else
+#define RADIO_TEST_MODE RADIO_TEST_MODE_DISABLED
+#endif
 
 #define TSCH_DEBUG 0
 
@@ -274,34 +272,34 @@ typedef uint32_t clock_time_t;
 #define SLIP_BRIDGE_CONF_NO_PUTCHAR 1
 #endif /* SLIP_BRIDGE_CONF_NO_PUTCHAR */
 
-/* Extension of LED definitions from leds.h for various JN516x dev boards
+/* Extension of LED definitions from leds.h for various JN516x dev boards 
 JN516x Dongle:
     LEDS_RED        Red LED on dongle
     LEDS_GREEN      Green LED on dongle
     Note: Only one LED can be switch on at the same time
-
+      
 DR1174-only:
     LEDS_GP0        LED D3 on DR1174
     LEDS_GP1        LED D6 on DR1174
-
+    
 DR1174+DR1199:
-    LEDS_RED        LED D1 on DR1199
+    LEDS_RED        LED D1 on DR1199                      
     LEDS_GREEN      LED D2 on DR1199
     LEDS_BLUE       LED D3 on DR1199
     LEDS_GP0        LED D3 on DR1174
     LEDS_GP1        LED D6 on DR1174
-
+    
 DR1174+DR1175:
-    LEDS_RED        Red led in RGB-led with level control on DR1175
-    LEDS_GREEN      Green led in RGB-led with level control on DR1175
-    LEDS_BLUE       Blue led in RGB-led with level control on DR1175
+    LEDS_RED        Red led in RGB-led with level control on DR1175    
+    LEDS_GREEN      Green led in RGB-led with level control on DR1175    
+    LEDS_BLUE       Blue led in RGB-led with level control on DR1175    
     LEDS_WHITE      White power led with level control on DR1175
     LEDS_GP0        LEDS D3 on DR1174
     LEDS_GP1        LEDS D6 on DR1174
 */
 #define LEDS_WHITE    8
 #define LEDS_GP0      16
-#define LEDS_GP1      32
+#define LEDS_GP1      32 
 #define LEDS_GP2      64
 #define LEDS_GP3      128
 #define LEDS_CONF_ALL 255

@@ -24,15 +24,12 @@ These system on chip (SoC) devices have the following main [features][jn516x-dat
 ## Maintainers and Contact
 
 Long-term maintainers:
-* Theo Van Daele, NXP, theo.van.daele@nxp.com, github user: [TeVeDe](https://github.com/TeVeDe)
+* Chris Gray, NXP, christopher.gray@nxp.com, github user: [NxpChrisGray](https://github.com/NxpChrisGray)
 * Simon Duquennoy, SICS, simonduq@sics.se, github user: [simonduq](https://github.com/simonduq)
 
 Other contributors:
 * Beshr Al Nahas, SICS (now Chalmers University), beshr@chalmers.se, github user: [beshrns](https://github.com/beshrns)
 * Atis Elsts, SICS, atis.elsts@sics.se, github user: [atiselsts](https://github.com/atiselsts)
-
-Additional long-term contact:
-* Hugh Maaskant, NXP, hugh.maaskant@nxp.com, github user: [hugh-maaskant](https://github.com/hugh-maaskant)
 
 ## License
 
@@ -44,10 +41,14 @@ The following features have been implemented:
   * A radio driver with two modes (polling and interrupt based)
   * CCM* driver with HW accelerated AES
   * UART driver (with HW and SW flow control, 1'000'000 baudrate by default)
-  * Contiki system clock and rtimers (16MHz tick frequency based on 32 MHz crystal)
-  * 32.768kHz external oscillator
+  * Contiki tickless clock
+  * Contiki rtimers based on either
+    * the 32 kHz external oscillator
+    * or the internal 32 MHz oscillator (which gives a 16 MHz rtimer)
+  * CPU low-power mdoes
+    * doze mode: shallow sleep, 32 MHz oscillator (source of rtimer and radio clock) keeps running
+    * sleep mode: deeper sleep, 32 MHz oscillator turned off, next wakeup set on 32 kHz oscillator
   * Periodic DCO recalibration
-  * CPU "doze" and "sleep" modes
   * HW random number generator used as a random seed for pseudo-random generator
   * Watchdog, JN516x HW exception handlers
 
@@ -175,7 +176,7 @@ The following platform-specific configurations are supported:
 
 The JN516X Contiki platform supports sleep mode (with RAM retention and keeping the external oscillator on). To enable sleeping, configure `JN516X_SLEEP_CONF_ENABLED=1`.
 
-Sleeping will only happen if there at least 50 ms until the next rtimer or etimer. Also, the system will wake up ~10 ms before the next timer should fire in order to reininitialize all hardware peripherals.
+Sleeping will only happen if there at least 50 ms until the next rtimer or etimer. Also, the system will wake up ~10 ms before the next timer should fire in order to reinitialize all hardware peripherals.
 
 The JN516X Contiki platform also supports rtimers at two different speeds: 16 MHz and 32 kHz. By default, the high-speed timer is used. The two timers have similar expected accuracy (drift ppm), but the 16 MHz one has higher precision. However, the low-speed timers are also kept running during sleeping. 
 

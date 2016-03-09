@@ -14,4 +14,4 @@ rm -fr ./dist/jn516x-cp6.bin && mkdir -p dist
 echo mount $(pwd) as /source
 
 # build cp6 JN5168 binary
-docker run --rm -a stdin -a stdout -a stderr -v $(pwd)/dist:/out -v $(pwd):/source tr2contiki bash -c 'cd /source/neeo/slip-radio && PATH=$PATH:/builder/bin WITH_FEM=1 TARGET=jn516x-neeo make distclean all && cp ./slip-radio.jn516x-neeo.bin /out/jn516x-cp6.bin'
+docker run --rm -a stdin -a stdout -a stderr -v $(pwd)/dist:/out -v $(pwd):/source tr2contiki bash -c 'cd /source/neeo/slip-radio && PATH=$PATH:/builder/bin MODULE=M05 TARGET=jn516x-temp make distclean all && cp ./slip-radio.jn516x-neeo.bin /out/jn516x-cp6.bin'

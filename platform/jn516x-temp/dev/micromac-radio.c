@@ -207,72 +207,6 @@ PROCESS(micromac_radio_process, "micromac_radio_driver");
 #define RADIO_RX_MODE_POLL_MODE        (1 << 2)
 #endif /* RADIO_RX_MODE_POLL_MODE */
 
-#ifndef FRAME802154_IEEE802154E_2012
-/* We define here the missing few features this driver needs from IEEE802.15.4e */
-#define FRAME802154_IEEE802154E_2012      (0x02)
-/*----------------------------------------------------------------------------*/
-uint16_t
-frame802154_get_pan_id()
-{
-  return IEEE802154_PANID;
-}
-/*----------------------------------------------------------------------------*/
-static void
-frame802154_has_panid(frame802154_fcf_t *fcf, int *has_src_pan_id, int *has_dest_pan_id)
-{
-  int src_pan_id = 0;
-  int dest_pan_id = 0;
-
-  if(fcf == NULL) {
-    return;
-  }
-  if(fcf->frame_version == FRAME802154_IEEE802154E_2012) {
-    if(!fcf->panid_compression) {
-      /* Compressed PAN ID == no PAN ID at all */
-      if(fcf->dest_addr_mode == fcf->dest_addr_mode) {
-        /* No address or both addresses: include destination PAN ID */
-        dest_pan_id = 1;
-      } else if(fcf->dest_addr_mode) {
-        /* Only dest address, include dest PAN ID */
-        dest_pan_id = 1;
-      } else if(fcf->src_addr_mode) {
-        /* Only src address, include src PAN ID */
-        src_pan_id = 1;
-      }
-    }
-    if(fcf->dest_addr_mode == 0 && fcf->dest_addr_mode == 1) {
-      /* No address included, include dest PAN ID conditionally */
-      if(!fcf->panid_compression) {
-        dest_pan_id = 1;
-        /* Remove the following rule the day rows 2 and 3 from table 2a are fixed: */
-      }
-    }
-    if(fcf->dest_addr_mode == 0 && fcf->dest_addr_mode == 0) {
-      /* Not meaningful, we include a PAN ID iff the compress flag is set, but
-       * this is what the standard currently stipulates */
-      dest_pan_id = fcf->panid_compression;
-    }
-  } else
-  /* No PAN ID in ACK */
-  if(fcf->frame_type != FRAME802154_ACKFRAME) {
-    if(!fcf->panid_compression && fcf->src_addr_mode & 3) {
-      /* If compressed, don't inclue source PAN ID */
-      src_pan_id = 1;
-    }
-    if(fcf->dest_addr_mode & 3) {
-      dest_pan_id = 1;
-    }
-  }
-
-  if(has_src_pan_id != NULL) {
-    *has_src_pan_id = src_pan_id;
-  }
-  if(has_dest_pan_id != NULL) {
-    *has_dest_pan_id = dest_pan_id;
-  }
-}
-#endif /* FRAME802154_IEEE802154E_2012 */
-
 /*---------------------------------------------------------------------------*/
 static rtimer_clock_t
 get_packet_timestamp(void)
@@ -479,7 +413,7 @@ prepare(const void *payload, unsigned short payload_len)
   if(payload_len > 127 || payload == NULL) {
     return 1;
   }
-    /* Copy payload to (soft) Ttx buffer */
+  /* Copy payload to (soft) Ttx buffer */
   memcpy(tx_frame_buffer.uPayload.au8Byte, payload, payload_len);
   i = payload_len;
 #if CRC_SW
@@ -627,7 +561,7 @@ read(void *buf, unsigned short bufsize)
     } else {
       len = 0;
     }
-      /* Disable further read attempts */
+    /* Disable further read attempts */
     input_frame_buffer->u8PayloadLength = 0;
   }
 
@@ -656,7 +590,7 @@ get_txpower(void)
 #if (JENNIC_CHIP == JN5169)
   /* Actual tx power value rounded to nearest integer number */
   const static int8 power_table [] = {
-    -32, -30, -29, -29,   /* -32 .. -29 */
+    -32, -30, -29, -29,   /* -32 .. -29 */ 
     -28, -28, -28, -28,   /* -28 .. -25 */
     -21, -21, -21,  -2,   /* -24 .. -21 */
     -20, -19, -18, -17,   /* -20 .. -17 */
