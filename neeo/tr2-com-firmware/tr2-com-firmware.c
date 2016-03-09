@@ -13,7 +13,7 @@
 #include "er-coap-engine.h"
 #include "rest_server.h"
 
-#define DEBUG_LEVEL DEBUG_NONE
+#define DEBUG_LEVEL DEBUG_ALL
 #include "log_helper.h"
 /*---------------------------------------------------------------------------*/
 #define BRAIN_PORT        3100
@@ -122,9 +122,6 @@ PROCESS_THREAD(query_process, ev, data)
   PROCESS_BEGIN();
   INFOT("INIT: Starting query process\n");
   INFOT("INIT: Version: %s.%s compiled @ %s %s)\n", FW_MAJOR_VERSION, version, __DATE__, __TIME__);
-
-  // TODO: get the offset from HOST
-  rtc_init(874);
 
   process_start(&config_process, NULL);
   process_start(&serial_parser_process, NULL);
@@ -301,6 +298,7 @@ PROCESS_THREAD(config_process, ev, data)
 
   PROCESS_BEGIN();
   INFOT("INIT: Starting config process\n");
+  INFO("CLOCK_SECOND: %d\n", CLOCK_SECOND);
   etimer_set(&et, CLOCK_SECOND);
 
   while(1) {
