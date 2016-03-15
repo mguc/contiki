@@ -3,9 +3,6 @@
 
 #include "../neeo-conf.h"
 
-#undef DEFINE_PUTCHAR_TO_SLIP
-#define DEFINE_PUTCHAR_TO_SLIP 0
-
 #undef SLIP_BRIDGE_CONF_NO_PUTCHAR
 #define SLIP_BRIDGE_CONF_NO_PUTCHAR 1
 

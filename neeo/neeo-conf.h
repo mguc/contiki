@@ -21,7 +21,6 @@
 #define NETSTACK_CONF_FRAMER noncoresec_framer
 #endif
 
-#define DEFINE_PUTCHAR_TO_SLIP 1
 #undef SLIP_BRIDGE_CONF_NO_PUTCHAR
 #define SLIP_BRIDGE_CONF_NO_PUTCHAR 0
 

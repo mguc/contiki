@@ -32,7 +32,7 @@
 
 #include "../neeo-conf.h"
 
-#define SLIP_RADIO_CONF_NO_PUTCHAR 1
+#define SLIP_RADIO_CONF_NO_PUTCHAR 0
 
 #define CMD_CONF_OUTPUT slip_radio_cmd_output
 
