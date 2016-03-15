@@ -13,7 +13,7 @@
 #include "er-coap-engine.h"
 #include "rest_server.h"
 
-#define DEBUG_LEVEL DEBUG_ALL
+#define DEBUG_LEVEL DEBUG_NONE
 #include "log_helper.h"
 /*---------------------------------------------------------------------------*/
 #define BRAIN_PORT        3100
@@ -298,7 +298,6 @@ PROCESS_THREAD(config_process, ev, data)
 
   PROCESS_BEGIN();
   INFOT("INIT: Starting config process\n");
-  INFO("CLOCK_SECOND: %d\n", CLOCK_SECOND);
   etimer_set(&et, CLOCK_SECOND);
 
   while(1) {
