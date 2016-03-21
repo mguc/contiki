@@ -48,7 +48,9 @@ blink_handler(REQUEST* request, RESPONSE* response)
   char cmd[4] = "!L\0";
 
   if (rest_get_post_variable(request, "mode", mode, 10)) {
-    if (!strcmp(mode,"on")) {
+    if (!strcmp(mode,"white")) {
+      cmd[2] = 5;
+    } else if(!strcmp(mode,"red")) {
       cmd[2] = 1;
     } else if(!strcmp(mode,"off")) {
       cmd[2] = 0;
@@ -282,10 +284,10 @@ learnir_handler(REQUEST* request, RESPONSE* response)
     /* Learn IR slip command format
     NBR -> slip-radio
     ! N <cmd> <res> <max_samples1> <max_samples2> <max_samples3> <max_samples4>
-    
+
     slip-radio -> NBR
     ! N <cmd> <res>
-    
+
     cmd:
     0x01 start irlearning
     0x02 stop irlearning

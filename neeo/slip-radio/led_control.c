@@ -8,8 +8,7 @@
 #define PWM_MAX_DUTY    1000
 
 #define LED_RED (1<<11)
-#define LED_BLUE (1<<12)
-#define LED_GREEN (1<<13)
+#define LED_WHITE (1<<12)
 
 static volatile int16_t duty;
 static volatile int16_t speed;
@@ -42,17 +41,26 @@ void led_blink(uint8_t mode)
         duty = 99;
         val = (PWM_PERIOD_MAX * duty) / PWM_MAX_DUTY;
         vAHI_TimerDisable(E_AHI_TIMER_1);
-        vAHI_DioSetDirection(0, LED_RED | LED_BLUE | LED_GREEN);
-        vAHI_DioSetOutput(0, LED_RED | LED_BLUE | LED_GREEN);
+        vAHI_DioSetDirection(0, LED_RED | LED_WHITE);
+        vAHI_DioSetOutput(0, LED_RED | LED_WHITE);
         break;
-    case LED_MODE_ON:
+    case LED_WHITE_ON:
         blink_period = 10;
         speed = 0;
         duty = 1;
         val = (PWM_PERIOD_MAX * duty) / PWM_MAX_DUTY;
         vAHI_TimerDisable(E_AHI_TIMER_1);
-        vAHI_DioSetDirection(0, LED_RED | LED_BLUE | LED_GREEN);
-        vAHI_DioSetOutput(LED_RED | LED_BLUE | LED_GREEN, 0);
+        vAHI_DioSetDirection(0, LED_WHITE);
+        vAHI_DioSetOutput(LED_WHITE, 0);
+        break;
+    case LED_RED_ON:
+        blink_period = 10;
+        speed = 0;
+        duty = 1;
+        val = (PWM_PERIOD_MAX * duty) / PWM_MAX_DUTY;
+        vAHI_TimerDisable(E_AHI_TIMER_1);
+        vAHI_DioSetDirection(0, LED_RED);
+        vAHI_DioSetOutput(LED_RED, 0);
         break;
     case LED_MODE_BLINK_200:
         blink_period = 10;
