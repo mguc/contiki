@@ -256,7 +256,7 @@ putchar(int c)
 #endif
 /*---------------------------------------------------------------------------*/
 PROCESS(slip_radio_process, "Slip radio process");
-AUTOSTART_PROCESSES(&slip_radio_process, &led_control_process, &ir_control_process, &ir_learn_process);
+AUTOSTART_PROCESSES(&slip_radio_process, &ir_control_process, &ir_learn_process);
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(slip_radio_process, ev, data)
 {
@@ -273,7 +273,7 @@ PROCESS_THREAD(slip_radio_process, ev, data)
   printf("Slip Radio started...\n");
 
   etimer_set(&et, CLOCK_SECOND * 3);
-  led_blink(LED_MODE_OFF);
+  led_init();
   led_blink(LED_MODE_BLINK_500);
 
   while(1) {

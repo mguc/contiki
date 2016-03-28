@@ -33,7 +33,7 @@
 
 #undef NETSTACK_CONF_MAC
 #undef NETSTACK_CONF_RDC
-//#undef NETSTACK_CONF_FRAMER
+#undef NETSTACK_CONF_FRAMER
 
 // The difference between nullrdc and contikimac is the way of accessing the medium (radio). Nullrdc keeps the radio turned on in RX mode
 // all the time and listen all activity on the radio. Of course during transmission the radio is switched to TX mode.
