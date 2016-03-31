@@ -58,7 +58,7 @@
 #include "dev/serial-line.h"
 
 #include "net/ip/uip.h"
-#include "dev/leds.h"
+//#include "dev/leds.h"
 
 #include "lib/random.h"
 #include "sys/node-id.h"
@@ -172,7 +172,7 @@ static void
 set_gateway(void)
 {
   if(!is_gateway) {
-    leds_on(LEDS_RED);
+//    leds_on(LEDS_RED);
     printf("%d.%d: making myself the IP network gateway.\n\n",
            linkaddr_node_addr.u8[0], linkaddr_node_addr.u8[1]);
     printf("IPv4 address of the gateway: %d.%d.%d.%d\n\n",
@@ -309,8 +309,8 @@ main(void)
 #endif
 
   watchdog_init();
-  leds_init();
-  leds_on(LEDS_ALL);
+//  leds_init();
+//  leds_on(LEDS_ALL);
   init_node_mac();
 
   energest_init();
@@ -423,7 +423,7 @@ main(void)
 
   start_autostart_processes();
 
-  leds_off(LEDS_ALL);
+//  leds_off(LEDS_ALL);
 
   main_loop();
 
@@ -530,7 +530,7 @@ AppWarmStart(void)
   rtimer_clock_t sleep_ticks_rtimer;
 
   clock_arch_calibrate();
-  leds_init();
+//  leds_init();
   uart0_init(UART_BAUD_RATE); /* Must come before first PRINTF */
   NETSTACK_RADIO.init();
   watchdog_init();
