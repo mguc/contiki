@@ -130,8 +130,8 @@ extern void *stack_low_water_mark;
 /****************************************************************************/
 /*---------------------------------------------------------------------------*/
 #if PRINT_STACK_ON_REBOOT
-#include "dev/uart0.h"
-#define printchar(X) uart0_write_direct(X)
+#include "dev/uart1.h"
+#define printchar(X) uart1_write_direct(X)
 /*---------------------------------------------------------------------------*/
 static void
 hexprint(uint8 v)

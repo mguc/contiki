@@ -532,6 +532,7 @@ AppWarmStart(void)
   clock_arch_calibrate();
 //  leds_init();
   uart0_init(UART_BAUD_RATE); /* Must come before first PRINTF */
+  uart1_init(UART1_BAUD_RATE); /* Must come before first PRINTF */
   NETSTACK_RADIO.init();
   watchdog_init();
   watchdog_stop();
