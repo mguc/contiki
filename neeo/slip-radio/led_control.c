@@ -1,114 +1,103 @@
 #include "contiki.h"
-#include "sys/etimer.h"
+#include "sys/ctimer.h"
 #include "led_control.h"
 #include <AppHardwareApi.h>
 #include <PeripheralRegs.h>
 
-#define PWM_PERIOD_MAX  250 // Timer0 period is 4us, thus PWM period is 1ms
-#define PWM_MAX_DUTY    1000
-
 #define LED_RED (1<<11)
 #define LED_WHITE (1<<12)
+#define LED_ALL (LED_RED | LED_WHITE)
 
-static volatile int16_t duty;
-static volatile int16_t speed;
 static uint16_t blink_period;
-static struct etimer et;
-PROCESS(led_control_process, "LED Control Process");
+static struct ctimer blink_timer;
+static uint8_t is_led_on;
+static uint32_t led_color = LED_WHITE;
 
-void timer1_callback(uint32_t u32DeviceId, uint32_t u32ItemBitmap)
+static void led_set_color(uint32_t color);
+
+static void led_on(){
+	vAHI_DioSetOutput(led_color, (LED_ALL)-led_color);
+}
+
+static void led_off(){
+	vAHI_DioSetOutput(0, LED_ALL);
+}
+
+void blink_callback(void *ptr)
 {
-    int16_t val;
-
-    duty += speed;
-
-    if(duty > PWM_MAX_DUTY)
-        duty = PWM_MAX_DUTY;
-    if(duty < 0)
-        duty = 0;
-
-    val = (PWM_PERIOD_MAX * duty) / PWM_MAX_DUTY;
-    vAHI_TimerStartRepeat(E_AHI_TIMER_1, val, PWM_PERIOD_MAX);
+    if(is_led_on){
+    	led_off();
+    	is_led_on = 0;
+    }
+    else{
+    	led_on();
+    	is_led_on = 1;
+    }
+    ctimer_set(&blink_timer, blink_period, blink_callback, NULL);
 }
 
 void led_blink(uint8_t mode)
 {
-    int16_t val;
+	ctimer_stop(&blink_timer);
     switch(mode) {
     case LED_MODE_OFF:
-        blink_period = 10;
-        speed = 0;
-        duty = 99;
-        val = (PWM_PERIOD_MAX * duty) / PWM_MAX_DUTY;
-        vAHI_TimerDisable(E_AHI_TIMER_1);
-        vAHI_DioSetDirection(0, LED_RED | LED_WHITE);
-        vAHI_DioSetOutput(0, LED_RED | LED_WHITE);
-        break;
-    case LED_WHITE_ON:
-        blink_period = 10;
-        speed = 0;
-        duty = 1;
-        val = (PWM_PERIOD_MAX * duty) / PWM_MAX_DUTY;
-        vAHI_TimerDisable(E_AHI_TIMER_1);
-        vAHI_DioSetDirection(0, LED_WHITE);
-        vAHI_DioSetOutput(LED_WHITE, 0);
+        blink_period = 0;
+        led_off();
+        is_led_on = 0;
         break;
     case LED_RED_ON:
-        blink_period = 10;
-        speed = 0;
-        duty = 1;
-        val = (PWM_PERIOD_MAX * duty) / PWM_MAX_DUTY;
-        vAHI_TimerDisable(E_AHI_TIMER_1);
-        vAHI_DioSetDirection(0, LED_RED);
-        vAHI_DioSetOutput(LED_RED, 0);
+        blink_period = 0;
+				led_set_color(LED_RED);
+        led_on();
+        is_led_on = 1;
         break;
     case LED_MODE_BLINK_200:
-        blink_period = 10;
-        speed = 10; /* on/off phase is 100ms, so we need to reach 1000 duty in 100ms with 1ms step */
-        duty = 0;
-        vAHI_TimerDIOControl(E_AHI_TIMER_1, TRUE );
-        vAHI_Timer1RegisterCallback((void*) timer1_callback);
-        // Prescaler = 6 -> DIV = 64 -> Timer1 CLK = 250 kHz
-        vAHI_TimerEnable(E_AHI_TIMER_1, 6, FALSE, TRUE, TRUE);
-        val = (PWM_PERIOD_MAX * duty) / PWM_MAX_DUTY;
-        vAHI_TimerStartRepeat(E_AHI_TIMER_1, val, PWM_PERIOD_MAX);
+        blink_period = CLOCK_CONF_SECOND/10;
+        led_on();
+        is_led_on = 1;
         break;
     case LED_MODE_BLINK_500:
-        blink_period = 25;
-        speed = 4;
-        duty = 0;
-        vAHI_TimerDIOControl(E_AHI_TIMER_1, TRUE );
-        vAHI_Timer1RegisterCallback((void*) timer1_callback);
-        // Prescaler = 6 -> DIV = 64 -> Timer1 CLK = 250 kHz
-        vAHI_TimerEnable(E_AHI_TIMER_1, 6, FALSE, TRUE, TRUE);
-        val = (PWM_PERIOD_MAX * duty) / PWM_MAX_DUTY;
-        vAHI_TimerStartRepeat(E_AHI_TIMER_1, val, PWM_PERIOD_MAX);
+        blink_period = CLOCK_CONF_SECOND/4;
+        led_on();
+        is_led_on = 1;
         break;
     case LED_MODE_BLINK_1000:
-        blink_period = 50;
-        speed = 2;
-        duty = 0;
-        vAHI_TimerDIOControl(E_AHI_TIMER_1, TRUE );
-        vAHI_Timer1RegisterCallback((void*) timer1_callback);
-        // Prescaler = 6 -> DIV = 64 -> Timer1 CLK = 250 kHz
-        vAHI_TimerEnable(E_AHI_TIMER_1, 6, FALSE, TRUE, TRUE);
-        val = (PWM_PERIOD_MAX * duty) / PWM_MAX_DUTY;
-        vAHI_TimerStartRepeat(E_AHI_TIMER_1, val, PWM_PERIOD_MAX);
+        blink_period = CLOCK_CONF_SECOND/2;
+        led_on();
+        is_led_on = 1;
         break;
+		case LED_WHITE_ON:
+				blink_period = 0;
+				led_set_color(LED_WHITE);
+				led_on();
+				is_led_on = 1;
+				break;
+    default:
+        blink_period = 0;
+        led_off();
+        is_led_on = 0;
+    	break;
+    }
+    if(blink_period){
+    	ctimer_set(&blink_timer, blink_period, blink_callback, NULL);
     }
 }
 
-PROCESS_THREAD(led_control_process, ev, data)
-{
-    PROCESS_BEGIN();
-    etimer_set(&et, blink_period);
-    while(1)
-    {
-        PROCESS_YIELD();
-        if(ev == PROCESS_EVENT_TIMER) {
-            etimer_set(&et, blink_period);
-            speed = -speed;
-        }
-    }
-    PROCESS_END();
+static void led_set_color(uint32_t color){
+	switch(color){
+		case LED_RED:
+			led_color = LED_RED;
+			break;
+		case LED_WHITE:
+			led_color = LED_WHITE;
+			break;
+		default:
+			led_color = LED_WHITE;
+			break;
+	}
+}
+
+void led_init(){
+    vAHI_DioSetDirection(0, LED_RED | LED_WHITE);
+    led_blink(LED_MODE_OFF);
 }

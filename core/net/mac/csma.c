@@ -286,7 +286,7 @@ packet_sent(void *ptr, int status, int num_transmissions)
         time = time + (random_rand() % (backoff_transmissions * time));
 
         if(n->transmissions < metadata->max_transmissions) {
-          PRINTF("csma: retransmitting with time %lu %p\n", time, q);
+          PRINTF("csma: retransmitting with time %lu ms %p\n", (uint32_t)(1000UL*time/CLOCK_SECOND), q);
           ctimer_set(&n->transmit_timer, time,
                      transmit_packet_list, n);
           /* This is needed to correctly attribute energy that we spent

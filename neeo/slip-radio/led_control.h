@@ -8,8 +8,7 @@
 #define LED_MODE_BLINK_1000 4
 #define LED_WHITE_ON        5
 
+void led_init();
 void led_blink(uint8_t mode);
-
-PROCESS_NAME(led_control_process);
 
 #endif
