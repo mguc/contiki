@@ -234,6 +234,7 @@ PROCESS_THREAD(serial_parser_process, ev, data)
         case T_GET_FW_VERSION:
         case T_GET_LOCAL_IP:
         case T_PAIR_WITH_CP6:
+        case T_HEARTBEAT:
           process_post_synch(&config_process, PROCESS_EVENT_MSG, &msg);
           break;
         case T_FIRMWARE_INFO:

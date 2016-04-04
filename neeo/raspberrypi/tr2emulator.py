@@ -20,6 +20,7 @@ commands = {
     'delete' : 0x14, #T_REST_DELETE
     'action' : 0x15, #T_TRIGGER_ACTION
     # 'T_DEBUG' : 0x16, # this message type is only avaiable for the JN
+    'heartbeat' : 0x17 #T_HEARTBEAT
     # 'T_ERROR_RESPONSE' : 0xEE # this message type is only avaiable for the JN
 }
 msg_hdr = {
