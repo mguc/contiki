@@ -18,11 +18,13 @@
 /*---------------------------------------------------------------------------*/
 #define BRAIN_PORT        3100
 #define BRAIN_COAP_PORT   3901
-#define FW_MAJOR_VERSION    "16"
+#define FW_MAJOR_VERSION    "19"
 
 #define QUERY_STATE_URI_LEN  256
 #define QUERY_STATE_PAYLOAD_LEN  256
 #define QUERY_STATE_DATA_BUF_LEN  1024
+
+#define HEARTBEAT_TIMEOUT CLOCK_SECOND
 /*---------------------------------------------------------------------------*/
 typedef struct query_state_s {
   uint8_t type;
@@ -34,13 +36,14 @@ typedef struct query_state_s {
   uint8_t data[QUERY_STATE_DATA_BUF_LEN];
 } __attribute__((packed)) query_state_t;
 /*---------------------------------------------------------------------------*/
-static uip_ipaddr_t brain_address;
+static uip_ipaddr_t brain_address, root_address;
 static query_state_t query;
 static msg_t msg_coap_ack;
 static struct etimer et;
 static struct etimer query_timeout_timer;
 static char cp6list[256];
 static uint32_t cp6list_idx;
+static struct ctimer heartbeat_timeout_ctimer;
 /*---------------------------------------------------------------------------*/
 PROCESS(query_process, "Query process");
 PROCESS(config_process, "Configuration process");
@@ -117,13 +120,11 @@ PROCESS_THREAD(query_process, ev, data)
   msg_t msg_resp;
   uint8_t resp[16];
   int ret, i;
+  static struct etimer dag_registered_timer;
 
   PROCESS_BEGIN();
   INFOT("INIT: Starting query process\n");
   INFOT("INIT: Version: %s.%s compiled @ %s %s)\n", FW_MAJOR_VERSION, version, __DATE__, __TIME__);
-
-  // TODO: get the offset from HOST
-  rtc_init(874);
 
   process_start(&config_process, NULL);
   process_start(&serial_parser_process, NULL);
@@ -134,6 +135,17 @@ PROCESS_THREAD(query_process, ev, data)
   uip_ds6_init();
   uip_nd6_init();
   rpl_init();
+
+
+  while(rpl_get_any_dag() == NULL){
+	  INFOT("Waiting to join a network\n");
+	  dis_output(NULL);
+	  etimer_set(&dag_registered_timer, CLOCK_SECOND);
+	  PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&dag_registered_timer));
+  }
+
+  rpl_dag_t *rpl_current_dag = rpl_get_any_dag();
+  root_address = rpl_current_dag->dag_id;
 
   while(1) {
     PROCESS_YIELD();
@@ -250,6 +262,10 @@ PROCESS_THREAD(coap_process, ev, data)
         if(tmpTransaction) {
           tmpTransaction->packet_len = coap_serialize_message(request, tmpTransaction->packet);
           coap_send_transaction(tmpTransaction);
+          msg_coap_ack.id = query.id;
+          msg_coap_ack.type = query.type;
+          msg_coap_ack.len = 0;
+          msg_coap_ack.data = NULL;
         }
       }
       else {
@@ -275,6 +291,30 @@ PROCESS_THREAD(coap_process, ev, data)
   PROCESS_END();
 }
 /*---------------------------------------------------------------------------*/
+static void heartbeat_callback(struct simple_udp_connection *c,
+                       const uip_ipaddr_t *source_addr,
+                       uint16_t source_port,
+                       const uip_ipaddr_t *dest_addr,
+                       uint16_t dest_port,
+                       const uint8_t *data, uint16_t datalen){
+  ctimer_stop(&heartbeat_timeout_ctimer);
+  msg_t heartbeat_msg;
+  uint8_t response = 1;
+  heartbeat_msg.type = T_HEARTBEAT;
+  heartbeat_msg.len = 1;
+  heartbeat_msg.data = &response;
+  send_msg(&heartbeat_msg);
+}
+
+static void heartbeat_timeout_callback(void *p_data){
+  msg_t heartbeat_msg;
+  uint8_t response = 0;
+  heartbeat_msg.type = T_HEARTBEAT;
+  heartbeat_msg.len = 1;
+  heartbeat_msg.data = &response;
+  send_msg(&heartbeat_msg);
+}
+
 PROCESS_THREAD(config_process, ev, data)
 {
   msg_t* msg_ptr;
@@ -285,15 +325,23 @@ PROCESS_THREAD(config_process, ev, data)
   uint32_t addr_buf_len = 48;
   radio_value_t rssi_val = 0;
   int ret;
+  static uint8_t brain_is_set = 0;
+  static struct simple_udp_connection hearbeat_conn;
 
   PROCESS_BEGIN();
   INFOT("INIT: Starting config process\n");
   etimer_set(&et, CLOCK_SECOND);
-
+  simple_udp_register(&hearbeat_conn,
+                      3001,
+                      NULL,
+                      3200,
+                      heartbeat_callback);
   while(1) {
     PROCESS_YIELD();
     if(ev == PROCESS_EVENT_MSG)
     {
+      memset(resp_buf, 0, sizeof(resp_buf));
+      memset(addr_buf, 0, sizeof(addr_buf));
       msg_ptr = (msg_t*)data;
       msg_buf.type = msg_ptr->type;
       msg_buf.id = msg_ptr->id;
@@ -327,13 +375,24 @@ PROCESS_THREAD(config_process, ev, data)
       }
       else if(msg_ptr->type == T_PAIR_WITH_CP6)
       {
-        uiplib_ipaddrconv((const char *)msg_ptr->data, &brain_address);
+    	uip_ipaddr_t tmp_address;
+        if(uiplib_ipaddrconv((const char *)msg_ptr->data, &tmp_address)){
+        	uip_ipaddr_copy(&brain_address, &tmp_address);
+            msg_buf.data = NULL;
+            msg_buf.len = 0;
+        }
+        else {
+        	strcpy(resp_buf, "Not valid address!");
+        	msg_buf.type = T_ERROR_RESPONSE;
+        	msg_buf.data = (uint8_t*)resp_buf;
+        	msg_buf.len = strlen(resp_buf) + 1;
+        }
+
         print_addr(&brain_address, addr_buf, &addr_buf_len);
         INFOT("INIT: Brain address: %s\n", addr_buf);
-
+        brain_is_set = 1;
         // TODO: start pair process, open TCP/IP connection?
-        msg_buf.data = NULL;
-        msg_buf.len = 0;
+
         send_msg(&msg_buf);
       }
       else if(msg_ptr->type == T_GET_FW_VERSION)
@@ -362,6 +421,20 @@ PROCESS_THREAD(config_process, ev, data)
           msg_buf.len = addr_len;
         }
         send_msg(&msg_buf);
+      }
+      else if(msg_ptr->type == T_HEARTBEAT){
+        if(brain_is_set == 1){
+          uint8_t heartbeat_buf[4];
+          memcpy(heartbeat_buf, "NBR?", 4);
+          simple_udp_sendto(&hearbeat_conn, heartbeat_buf, 4, &root_address);
+          ctimer_set(&heartbeat_timeout_ctimer, HEARTBEAT_TIMEOUT, heartbeat_timeout_callback, NULL);
+        }
+        else {
+          resp_buf[0] = 0;
+          msg_buf.data = (uint8_t*)resp_buf;
+          msg_buf.len = 1;
+          send_msg(&msg_buf);
+        }
       }
     }
     else if(ev == PROCESS_EVENT_TIMER)

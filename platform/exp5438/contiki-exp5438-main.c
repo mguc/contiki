@@ -178,23 +178,6 @@ main(int argc, char **argv)
 
   set_rime_addr();
 
-  cc2420_init();
-
-  {
-    uint8_t longaddr[8];
-    uint16_t shortaddr;
-
-    shortaddr = (linkaddr_node_addr.u8[0] << 8) +
-      linkaddr_node_addr.u8[1];
-    memset(longaddr, 0, sizeof(longaddr));
-    linkaddr_copy((linkaddr_t *)&longaddr, &linkaddr_node_addr);
-    printf("MAC %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
-           longaddr[0], longaddr[1], longaddr[2], longaddr[3],
-           longaddr[4], longaddr[5], longaddr[6], longaddr[7]);
-
-    cc2420_set_pan_addr(IEEE802154_PANID, shortaddr, longaddr);
-  }
-
   leds_off(LEDS_ALL);
 
   if(node_id > 0) {
@@ -209,9 +192,7 @@ main(int argc, char **argv)
 
   queuebuf_init();
 
-  NETSTACK_RDC.init();
-  NETSTACK_MAC.init();
-  NETSTACK_NETWORK.init();
+  netstack_init();
 
   printf("%s %lu %u\n",
          NETSTACK_RDC.name,
@@ -260,6 +241,22 @@ main(int argc, char **argv)
                          NETSTACK_RDC.channel_check_interval()),
          CC2420_CONF_CHANNEL);
 #endif /* NETSTACK_CONF_WITH_IPV6 */
+
+  {
+    /* Radio configuration */
+    uint8_t longaddr[8];
+    uint16_t shortaddr;
+
+    shortaddr = (linkaddr_node_addr.u8[0] << 8) +
+      linkaddr_node_addr.u8[1];
+    memset(longaddr, 0, sizeof(longaddr));
+    linkaddr_copy((linkaddr_t *)&longaddr, &linkaddr_node_addr);
+    printf("MAC %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
+           longaddr[0], longaddr[1], longaddr[2], longaddr[3],
+           longaddr[4], longaddr[5], longaddr[6], longaddr[7]);
+
+    cc2420_set_pan_addr(IEEE802154_PANID, shortaddr, longaddr);
+  }
 
 #if !NETSTACK_CONF_WITH_IPV6
   uart1_set_input(serial_line_input_byte);

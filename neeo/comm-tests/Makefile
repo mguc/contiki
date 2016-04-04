@@ -1,0 +1,19 @@
+CONTIKI_PROJECT = coap-receiver coap-sender udp-pingpong udp-unicast-receiver udp-unicast-sender udp-broadcast-receiver udp-broadcast-sender aes-brain aes-remote
+all: $(CONTIKI_PROJECT)
+
+CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
+
+ifeq ($(WITH_FEM),1)
+  CFLAGS += -DRADIO_TEST_MODE=RADIO_TEST_MODE_HIGH_PWR
+endif
+
+APPS += replong er-coap rest-engine
+
+CONTIKI=../..
+
+SMALL=1
+#IAR=1
+
+PROJECT_SOURCEFILES += rimestats.c
+
+include $(CONTIKI)/Makefile.include

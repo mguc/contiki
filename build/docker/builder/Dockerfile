@@ -16,11 +16,11 @@ RUN tar -xjvf contiki-confidential-toolchain.tar.bz2
 
 # get arm toolchain
 RUN apt-get install -yqq gcc-arm-linux-gnueabihf
-
+RUN git clone https://github.com/raspberrypi/tools
 
 # JN SDK Download URL: http://www.nxp.com/search?rows=10&type=keyword&q=jn-sw-4163&page=1&tab=All&filterChanged=pcon%5B%5D
-RUN wget https://s3-eu-west-1.amazonaws.com/neeo-build/JN-SW-4163-SDK-Build1281.tar && tar -C / -xf JN-SW-4163-SDK-Build1281.tar
+RUN wget https://s3-eu-west-1.amazonaws.com/neeo-build/JN-SW-4163-SDK-Build1307.tar && tar -C / -xf JN-SW-4163-SDK-Build1307.tar
 ENV SDK_BASE_DIR /JN-SW-4163
 
 # workaround strange issue...
-RUN cp /JN-SW-4163/Platform/Common/Build/Config.mk /JN-SW-4163/Platform/Common/Build/config.mk
+RUN cp /JN-SW-4163/Platform/Common/Build/Config.mk /JN-SW-4163/Platform/Common/Build/config.mk || true

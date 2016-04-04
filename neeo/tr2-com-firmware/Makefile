@@ -10,10 +10,6 @@ ifeq ($(TARGET),)
   -include Makefile.target
 endif
 
-ifeq ($(WITH_FEM),1)
-  CFLAGS += -DRADIO_TEST_MODE=RADIO_TEST_MODE_HIGH_PWR
-endif
-
 .PHONY: git_revision
 git_revision:
 	@echo "const char *version = \"$(shell git rev-parse HEAD | cut -b 1-8)\";" > version.h
@@ -37,6 +33,7 @@ PROJECT_SOURCEFILES += serial-protocol.c
 PROJECT_SOURCEFILES += rtc.c
 PROJECT_SOURCEFILES += rest_server.c
 PROJECT_SOURCEFILES += tr2-debug.c
+PROJECT_SOURCEFILES += rimestats.c
 
 CONTIKI_WITH_IPV6 = 1
 include $(CONTIKI)/Makefile.include
