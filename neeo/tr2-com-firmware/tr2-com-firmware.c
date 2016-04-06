@@ -18,13 +18,18 @@
 /*---------------------------------------------------------------------------*/
 #define BRAIN_PORT        3100
 #define BRAIN_COAP_PORT   3901
-#define FW_MAJOR_VERSION    "19"
+#define FW_MAJOR_VERSION    "20"
 
 #define QUERY_STATE_URI_LEN  256
 #define QUERY_STATE_PAYLOAD_LEN  256
 #define QUERY_STATE_DATA_BUF_LEN  1024
 
 #define HEARTBEAT_TIMEOUT CLOCK_SECOND
+#define HEARTBEAT_STEP 20
+#define HEARTBEAT_SUCCESS_WEIGHT 2
+#define HEARTBEAT_FAILURE_WEIGHT 1
+static int32_t heartbeat_success_rate = 100;
+
 /*---------------------------------------------------------------------------*/
 typedef struct query_state_s {
   uint8_t type;
@@ -291,6 +296,20 @@ PROCESS_THREAD(coap_process, ev, data)
   PROCESS_END();
 }
 /*---------------------------------------------------------------------------*/
+static void heartbeat_send_msg(){
+  msg_t heartbeat_msg;
+  uint8_t response;
+  if(heartbeat_success_rate >= 50)
+    response = 1;
+  else
+    response = 0;
+
+  heartbeat_msg.type = T_HEARTBEAT;
+  heartbeat_msg.len = 1;
+  heartbeat_msg.data = &response;
+  send_msg(&heartbeat_msg);
+}
+
 static void heartbeat_callback(struct simple_udp_connection *c,
                        const uip_ipaddr_t *source_addr,
                        uint16_t source_port,
@@ -298,21 +317,17 @@ static void heartbeat_callback(struct simple_udp_connection *c,
                        uint16_t dest_port,
                        const uint8_t *data, uint16_t datalen){
   ctimer_stop(&heartbeat_timeout_ctimer);
-  msg_t heartbeat_msg;
-  uint8_t response = 1;
-  heartbeat_msg.type = T_HEARTBEAT;
-  heartbeat_msg.len = 1;
-  heartbeat_msg.data = &response;
-  send_msg(&heartbeat_msg);
+  heartbeat_success_rate += HEARTBEAT_SUCCESS_WEIGHT*HEARTBEAT_STEP;
+  if(heartbeat_success_rate > 100)
+    heartbeat_success_rate = 100;
+  heartbeat_send_msg();
 }
 
 static void heartbeat_timeout_callback(void *p_data){
-  msg_t heartbeat_msg;
-  uint8_t response = 0;
-  heartbeat_msg.type = T_HEARTBEAT;
-  heartbeat_msg.len = 1;
-  heartbeat_msg.data = &response;
-  send_msg(&heartbeat_msg);
+  heartbeat_success_rate -= HEARTBEAT_FAILURE_WEIGHT*HEARTBEAT_STEP;
+  if(heartbeat_success_rate < 0)
+    heartbeat_success_rate = 0;
+  heartbeat_send_msg();
 }
 
 PROCESS_THREAD(config_process, ev, data)
