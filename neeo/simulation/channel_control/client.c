@@ -4,7 +4,7 @@
 
 #define LOCAL_PORT 3200
 #define REMOTE_PORT 3200
-#define DISCOVERY_DUTY_CYCLE CLOCK_SECOND/2
+#define DISCOVERY_DUTY_CYCLE CLOCK_SECOND/10
 static struct etimer discovery_duty_cycle;
 
 #define DEBUG DEBUG_FULL
@@ -38,29 +38,8 @@ static void discover_callback(struct simple_udp_connection *c,
                        const uip_ipaddr_t *dest_addr, uint16_t dest_port,
                        const uint8_t *data, uint16_t datalen)
 {
-
-  if(strcmp((char*)data, "NBR?") == 0 && datalen == 4)
-  {
-    etimer_stop(&discovery_duty_cycle);  
-    uint32_t buf_len = 48;
-    char buf[48] = {0};
-    // print_addr(source_addr, buf, &buf_len);
-    PRINTF("Dicovery from: %s ", buf);
-    PRINTF("I'm NBR!\n");
-    buf_len = 48;
-    memcpy(buf, "Y ", 2);
-    buf_len -= 2;
-    // print_addr(&tun_address, buf+2, &buf_len);
-    c->remote_port = source_port;
-    simple_udp_sendto(c, buf, buf_len+2, source_addr);
-  }
-  else if(strcmp((char*)data, "H") == 0 && datalen == 1) {
-    PRINTF("Received heartbeat on channel: %u\n", get_rf_channel());
-    char response = 'Y';
-    c->remote_port = source_port;
-    uip_ipaddr_t addr;
-    uip_create_linklocal_allnodes_mcast(&addr);
-    simple_udp_sendto(c, &response, 1, &addr);
+  if(strcmp((char*)data, "Y") == 0 && datalen == 1) {
+    PRINTF("Received response on channel: %u\n", get_rf_channel());
   }
   else
     PRINTF("Received unknown response with length %u: %s", datalen, data);
@@ -73,10 +52,10 @@ PROCESS_THREAD(channel_control, ev, data)
   
   static int current_discovery_channel_index = 0;
   static int *p_message;
-  
+  static uip_ipaddr_t addr;
+  static uint8_t buf; 
   PROCESS_BEGIN();
   
-  set_rf_channel(discovery_channels[current_discovery_channel_index++]);
   simple_udp_register(&server_conn, LOCAL_PORT, NULL, REMOTE_PORT, discover_callback);
   etimer_set(&discovery_duty_cycle, DISCOVERY_DUTY_CYCLE);
   
@@ -88,8 +67,13 @@ PROCESS_THREAD(channel_control, ev, data)
       case PROCESS_EVENT_TIMER:
         if(current_discovery_channel_index >= sizeof(discovery_channels)/sizeof(radio_value_t))
           current_discovery_channel_index = 0;
+        
         set_rf_channel(discovery_channels[current_discovery_channel_index++]);
-        etimer_set(&discovery_duty_cycle, DISCOVERY_DUTY_CYCLE);  
+        uip_create_linklocal_allnodes_mcast(&addr);
+        buf = 'H';
+        PRINTF("Sending heartbeat on channel: %u\n", get_rf_channel());
+        simple_udp_sendto(&server_conn, &buf, 1, &addr);
+        etimer_set(&discovery_duty_cycle, DISCOVERY_DUTY_CYCLE);
         break;
       default:
         break;
