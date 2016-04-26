@@ -68,7 +68,7 @@
 #define IEEE802154_CONF_PANID 0xabcd
 
 #undef   MICROMAC_CONF_CHANNEL
-#define  MICROMAC_CONF_CHANNEL  14
+#define  MICROMAC_CONF_CHANNEL  11
 
 #if CONTIKI_TARGET_EXP5438
 /* Let's keep the default settings, to preserve some memory for simulations */
@@ -83,7 +83,11 @@
 #undef COAP_MAX_HEADER_SIZE
 #define COAP_MAX_HEADER_SIZE 	  200
 #undef COAP_MAX_RETRANSMIT
-#define COAP_MAX_RETRANSMIT     1
+#define COAP_MAX_RETRANSMIT     0
+
+/* CSMA configuration */
+#undef CSMA_CONF_MAX_MAC_TRANSMISSIONS
+#define CSMA_CONF_MAX_MAC_TRANSMISSIONS 1
 
 #endif /* CONTIKI_TARGET_EXP5438 */
 
