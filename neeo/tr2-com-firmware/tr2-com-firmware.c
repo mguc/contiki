@@ -24,11 +24,13 @@
 #define QUERY_STATE_PAYLOAD_LEN  256
 #define QUERY_STATE_DATA_BUF_LEN  1024
 
-#define HEARTBEAT_TIMEOUT CLOCK_SECOND
+#define HEARTBEAT_TIMEOUT CLOCK_SECOND/10
 #define HEARTBEAT_STEP 20
 #define HEARTBEAT_SUCCESS_WEIGHT 2
 #define HEARTBEAT_FAILURE_WEIGHT 1
+#define HEARTBEAT_DISABLE_TIME CLOCK_SECOND
 static int32_t heartbeat_success_rate = 100;
+static uint8_t heartbeat_enabled = 1;
 
 /*---------------------------------------------------------------------------*/
 typedef struct query_state_s {
@@ -117,6 +119,12 @@ print_addr(const uip_ipaddr_t *addr, char* buf, uint32_t* len)
   wr_ptr+=1;
   *wr_ptr = 0;
   *len = wr_ptr - buf;
+}
+static void heartbeat_enable(void *p_data){
+  heartbeat_enabled = 1;
+}
+static void heartbeat_disable(){
+  heartbeat_enabled = 0;
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(query_process, ev, data)
@@ -210,7 +218,8 @@ PROCESS_THREAD(coap_process, ev, data)
   static coap_packet_t request[1];
   static msg_t* ptrMsg;
   char* newLine;
-
+  static struct ctimer heartbeat_disable_ctimer;
+  
   PROCESS_BEGIN();
 
   coap_init_engine();
@@ -257,6 +266,10 @@ PROCESS_THREAD(coap_process, ev, data)
         coap_init_message(request, COAP_TYPE_CON, COAP_DELETE, 0);
       }
 
+      /* disable heartbeat for HEARTBEAT_DISABLE_TIME */
+      heartbeat_disable();
+      ctimer_set(&heartbeat_disable_ctimer, HEARTBEAT_DISABLE_TIME, heartbeat_enable, NULL);
+      
       if(ptrMsg->type == T_TRIGGER_ACTION){
         //send non confirmable message
         coap_init_message(request, COAP_TYPE_NON, COAP_GET, 0);
@@ -303,7 +316,7 @@ static void heartbeat_send_msg(){
     response = 1;
   else
     response = 0;
-
+  heartbeat_msg.id = 0;
   heartbeat_msg.type = T_HEARTBEAT;
   heartbeat_msg.len = 1;
   heartbeat_msg.data = &response;
@@ -437,12 +450,16 @@ PROCESS_THREAD(config_process, ev, data)
         }
         send_msg(&msg_buf);
       }
-      else if(msg_ptr->type == T_HEARTBEAT){
+      else if(msg_ptr->type == T_HEARTBEAT && rpl_get_any_dag()){
         if(brain_is_set == 1){
-          uint8_t heartbeat_buf[4];
-          memcpy(heartbeat_buf, "NBR?", 4);
-          simple_udp_sendto(&hearbeat_conn, heartbeat_buf, 4, &root_address);
-          ctimer_set(&heartbeat_timeout_ctimer, HEARTBEAT_TIMEOUT, heartbeat_timeout_callback, NULL);
+          if(heartbeat_enabled){
+            uint8_t heartbeat_buf[4];
+            memcpy(heartbeat_buf, "NBR?", 4);
+            simple_udp_sendto(&hearbeat_conn, heartbeat_buf, 4, &root_address);
+            ctimer_set(&heartbeat_timeout_ctimer, HEARTBEAT_TIMEOUT, heartbeat_timeout_callback, NULL);
+          }
+          else
+            heartbeat_send_msg();
         }
         else {
           resp_buf[0] = 0;
