@@ -32,7 +32,7 @@
 static int32_t heartbeat_success_rate = 100;
 static uint8_t heartbeat_enabled = 1;
 static uint8_t heartbeat_msg_id = 0;
-
+static uint8_t heartbeat_response_sent = 0;
 /*---------------------------------------------------------------------------*/
 typedef struct query_state_s {
   uint8_t type;
@@ -311,17 +311,20 @@ PROCESS_THREAD(coap_process, ev, data)
 }
 /*---------------------------------------------------------------------------*/
 static void heartbeat_send_msg(uint8_t id){
-  msg_t heartbeat_msg;
-  uint8_t response;
-  if(heartbeat_success_rate >= 50)
-    response = 1;
-  else
-    response = 0;
-  heartbeat_msg.id = id;
-  heartbeat_msg.type = T_HEARTBEAT;
-  heartbeat_msg.len = 1;
-  heartbeat_msg.data = &response;
-  send_msg(&heartbeat_msg);
+  if(!heartbeat_response_sent){
+    heartbeat_response_sent = 1;
+    msg_t heartbeat_msg;
+    uint8_t response;
+    if(heartbeat_success_rate >= 50)
+      response = 1;
+    else
+      response = 0;
+    heartbeat_msg.id = id;
+    heartbeat_msg.type = T_HEARTBEAT;
+    heartbeat_msg.len = 1;
+    heartbeat_msg.data = &response;
+    send_msg(&heartbeat_msg);
+  }
 }
 
 static void heartbeat_callback(struct simple_udp_connection *c,
@@ -452,6 +455,7 @@ PROCESS_THREAD(config_process, ev, data)
         send_msg(&msg_buf);
       }
       else if(msg_ptr->type == T_HEARTBEAT){
+        heartbeat_response_sent = 0;
         if(brain_is_set && rpl_get_any_dag()){
           if(heartbeat_enabled){
             heartbeat_msg_id = msg_buf.id;
