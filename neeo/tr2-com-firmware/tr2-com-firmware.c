@@ -18,7 +18,7 @@
 /*---------------------------------------------------------------------------*/
 #define BRAIN_PORT        3100
 #define BRAIN_COAP_PORT   3901
-#define FW_MAJOR_VERSION    "20"
+#define FW_MAJOR_VERSION    "21"
 
 #define QUERY_STATE_URI_LEN  256
 #define QUERY_STATE_PAYLOAD_LEN  256
@@ -220,7 +220,7 @@ PROCESS_THREAD(coap_process, ev, data)
   static msg_t* ptrMsg;
   char* newLine;
   static struct ctimer heartbeat_disable_ctimer;
-  
+
   PROCESS_BEGIN();
 
   coap_init_engine();
@@ -270,7 +270,7 @@ PROCESS_THREAD(coap_process, ev, data)
       /* disable heartbeat for HEARTBEAT_DISABLE_TIME */
       heartbeat_disable();
       ctimer_set(&heartbeat_disable_ctimer, HEARTBEAT_DISABLE_TIME, heartbeat_enable, NULL);
-      
+
       if(ptrMsg->type == T_TRIGGER_ACTION){
         //send non confirmable message
         coap_init_message(request, COAP_TYPE_NON, COAP_GET, 0);
