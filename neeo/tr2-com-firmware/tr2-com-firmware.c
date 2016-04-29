@@ -31,6 +31,7 @@
 #define HEARTBEAT_DISABLE_TIME CLOCK_SECOND
 static int32_t heartbeat_success_rate = 100;
 static uint8_t heartbeat_enabled = 1;
+static uint8_t heartbeat_msg_id = 0;
 
 /*---------------------------------------------------------------------------*/
 typedef struct query_state_s {
@@ -309,14 +310,14 @@ PROCESS_THREAD(coap_process, ev, data)
   PROCESS_END();
 }
 /*---------------------------------------------------------------------------*/
-static void heartbeat_send_msg(){
+static void heartbeat_send_msg(uint8_t id){
   msg_t heartbeat_msg;
   uint8_t response;
   if(heartbeat_success_rate >= 50)
     response = 1;
   else
     response = 0;
-  heartbeat_msg.id = 0;
+  heartbeat_msg.id = id;
   heartbeat_msg.type = T_HEARTBEAT;
   heartbeat_msg.len = 1;
   heartbeat_msg.data = &response;
@@ -333,14 +334,14 @@ static void heartbeat_callback(struct simple_udp_connection *c,
   heartbeat_success_rate += HEARTBEAT_SUCCESS_WEIGHT*HEARTBEAT_STEP;
   if(heartbeat_success_rate > 100)
     heartbeat_success_rate = 100;
-  heartbeat_send_msg();
+  heartbeat_send_msg(heartbeat_msg_id);
 }
 
 static void heartbeat_timeout_callback(void *p_data){
   heartbeat_success_rate -= HEARTBEAT_FAILURE_WEIGHT*HEARTBEAT_STEP;
   if(heartbeat_success_rate < 0)
     heartbeat_success_rate = 0;
-  heartbeat_send_msg();
+  heartbeat_send_msg(heartbeat_msg_id);
 }
 
 PROCESS_THREAD(config_process, ev, data)
@@ -450,16 +451,17 @@ PROCESS_THREAD(config_process, ev, data)
         }
         send_msg(&msg_buf);
       }
-      else if(msg_ptr->type == T_HEARTBEAT && rpl_get_any_dag()){
-        if(brain_is_set == 1){
+      else if(msg_ptr->type == T_HEARTBEAT){
+        if(brain_is_set && rpl_get_any_dag()){
           if(heartbeat_enabled){
+            heartbeat_msg_id = msg_buf.id;
             uint8_t heartbeat_buf[4];
             memcpy(heartbeat_buf, "NBR?", 4);
             simple_udp_sendto(&hearbeat_conn, heartbeat_buf, 4, &root_address);
             ctimer_set(&heartbeat_timeout_ctimer, HEARTBEAT_TIMEOUT, heartbeat_timeout_callback, NULL);
           }
           else
-            heartbeat_send_msg();
+            heartbeat_send_msg(msg_buf.id);
         }
         else {
           resp_buf[0] = 0;
