@@ -24,6 +24,9 @@
 #define QUERY_STATE_PAYLOAD_LEN  256
 #define QUERY_STATE_DATA_BUF_LEN  1024
 
+#define IMPORTANT_MESSAGE_MAX_MAC_TRANSMISSIONS 3
+#define NORMAL_MESSAGE_MAX_MAC_TRANSMISSIONS 1
+
 #define HEARTBEAT_TIMEOUT CLOCK_SECOND/10
 #define HEARTBEAT_STEP 20
 #define HEARTBEAT_SUCCESS_WEIGHT 2
@@ -280,7 +283,9 @@ PROCESS_THREAD(coap_process, ev, data)
         coap_transaction_t *tmpTransaction =  coap_new_transaction(request->mid, &brain_address, BRAIN_COAP_PORT);
         if(tmpTransaction) {
           tmpTransaction->packet_len = coap_serialize_message(request, tmpTransaction->packet);
+          sicslowpan_set_max_mac_transmissions(NORMAL_MESSAGE_MAX_MAC_TRANSMISSIONS);
           coap_send_transaction(tmpTransaction);
+          sicslowpan_reset_max_mac_transmissions();
           msg_coap_ack.id = query.id;
           msg_coap_ack.type = query.type;
           msg_coap_ack.len = 0;
@@ -297,7 +302,9 @@ PROCESS_THREAD(coap_process, ev, data)
         token[0] = random & 0xff;
         token[1] = (random>>8) & 0xff;
         coap_set_token(request, token, 2);
+        sicslowpan_set_max_mac_transmissions(IMPORTANT_MESSAGE_MAX_MAC_TRANSMISSIONS);
         COAP_BLOCKING_REQUEST(&brain_address, BRAIN_COAP_PORT, request, coap_chunk_handler);
+        sicslowpan_reset_max_mac_transmissions();
         msg_coap_ack.id = query.id;
         msg_coap_ack.type = query.type;
         msg_coap_ack.len = query.dataLen;
@@ -461,7 +468,9 @@ PROCESS_THREAD(config_process, ev, data)
             heartbeat_msg_id = msg_buf.id;
             uint8_t heartbeat_buf[4];
             memcpy(heartbeat_buf, "NBR?", 4);
+            sicslowpan_set_max_mac_transmissions(NORMAL_MESSAGE_MAX_MAC_TRANSMISSIONS);
             simple_udp_sendto(&hearbeat_conn, heartbeat_buf, 4, &root_address);
+            sicslowpan_reset_max_mac_transmissions();
             ctimer_set(&heartbeat_timeout_ctimer, HEARTBEAT_TIMEOUT, heartbeat_timeout_callback, NULL);
           }
           else
@@ -556,7 +565,9 @@ PROCESS_THREAD(discover_process, ev, data)
         print_addr(&nbr->ipaddr, buf, &buf_len);
         INFOT("DISCOVER: sending whois to: %s\n", buf);
         memcpy(buf, "NBR?", 4);
+        sicslowpan_set_max_mac_transmissions(IMPORTANT_MESSAGE_MAX_MAC_TRANSMISSIONS);
         simple_udp_sendto(&client_conn, buf, 4, &nbr->ipaddr);
+        sicslowpan_reset_max_mac_transmissions();
       }
       etimer_set(&discover_timeout, 3 * CLOCK_SECOND);
     } else if(ev == PROCESS_EVENT_TIMER) {
