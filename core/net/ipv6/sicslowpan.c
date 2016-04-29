@@ -98,6 +98,25 @@ void uip_log(char *msg);
 #define SICSLOWPAN_MAX_MAC_TRANSMISSIONS 4
 #endif
 
+#ifdef SICSLOWPAN_CONF_DYNAMIC_MAX_MAC_TRANSMISSIONS
+#define SICSLOWPAN_DYNAMIC_MAX_MAC_TRANSMISSIONS SICSLOWPAN_CONF_DYNAMIC_MAX_MAC_TRANSMISSIONS
+#else
+#define SICSLOWPAN_DYNAMIC_MAX_MAC_TRANSMISSIONS 0
+#endif
+
+#if SICSLOWPAN_DYNAMIC_MAX_MAC_TRANSMISSIONS
+uint16_t sicslowpan_dynamic_max_mac_transmissions = SICSLOWPAN_MAX_MAC_TRANSMISSIONS;
+void sicslowpan_set_max_mac_transmissions(uint16_t val){
+  sicslowpan_dynamic_max_mac_transmissions = val;
+}
+uint16_t sicslowpan_get_max_mac_transmissions(void){
+  return sicslowpan_dynamic_max_mac_transmissions;
+}
+void sicslowpan_reset_max_mac_transmissions(void){
+  sicslowpan_dynamic_max_mac_transmissions = SICSLOWPAN_MAX_MAC_TRANSMISSIONS;
+}
+#endif /* SICSLOWPAN_DYNAMIC_MAX_MAC_TRANSMISSIONS */
+
 #ifndef SICSLOWPAN_COMPRESSION
 #ifdef SICSLOWPAN_CONF_COMPRESSION
 #define SICSLOWPAN_COMPRESSION SICSLOWPAN_CONF_COMPRESSION
@@ -1290,8 +1309,13 @@ output(const uip_lladdr_t *localdest)
   packetbuf_clear();
   packetbuf_ptr = packetbuf_dataptr();
 
-  packetbuf_set_attr(PACKETBUF_ATTR_MAX_MAC_TRANSMISSIONS,
-                     SICSLOWPAN_MAX_MAC_TRANSMISSIONS);
+#if SICSLOWPAN_DYNAMIC_MAX_MAC_TRANSMISSIONS
+packetbuf_set_attr(PACKETBUF_ATTR_MAX_MAC_TRANSMISSIONS,
+                   sicslowpan_dynamic_max_mac_transmissions);
+#else
+packetbuf_set_attr(PACKETBUF_ATTR_MAX_MAC_TRANSMISSIONS,
+                   SICSLOWPAN_MAX_MAC_TRANSMISSIONS);
+#endif /* SICSLOWPAN_DYNAMIC_MAX_MAC_TRANSMISSIONS */
 
   if(callback) {
     /* call the attribution when the callback comes, but set attributes
@@ -1803,4 +1827,3 @@ const struct network_driver sicslowpan_driver = {
 };
 /*--------------------------------------------------------------------*/
 /** @} */
-
