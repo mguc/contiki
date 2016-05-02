@@ -18,13 +18,24 @@
 /*---------------------------------------------------------------------------*/
 #define BRAIN_PORT        3100
 #define BRAIN_COAP_PORT   3901
-#define FW_MAJOR_VERSION    "19"
+#define FW_MAJOR_VERSION    "22"
 
 #define QUERY_STATE_URI_LEN  256
 #define QUERY_STATE_PAYLOAD_LEN  256
 #define QUERY_STATE_DATA_BUF_LEN  1024
 
-#define HEARTBEAT_TIMEOUT CLOCK_SECOND
+#define IMPORTANT_MESSAGE_MAX_MAC_TRANSMISSIONS 3
+#define NORMAL_MESSAGE_MAX_MAC_TRANSMISSIONS 1
+
+#define HEARTBEAT_TIMEOUT CLOCK_SECOND/10
+#define HEARTBEAT_STEP 20
+#define HEARTBEAT_SUCCESS_WEIGHT 2
+#define HEARTBEAT_FAILURE_WEIGHT 1
+#define HEARTBEAT_DISABLE_TIME CLOCK_SECOND
+static int32_t heartbeat_success_rate = 100;
+static uint8_t heartbeat_enabled = 1;
+static uint8_t heartbeat_msg_id = 0;
+static uint8_t heartbeat_response_sent = 0;
 /*---------------------------------------------------------------------------*/
 typedef struct query_state_s {
   uint8_t type;
@@ -112,6 +123,12 @@ print_addr(const uip_ipaddr_t *addr, char* buf, uint32_t* len)
   wr_ptr+=1;
   *wr_ptr = 0;
   *len = wr_ptr - buf;
+}
+static void heartbeat_enable(void *p_data){
+  heartbeat_enabled = 1;
+}
+static void heartbeat_disable(){
+  heartbeat_enabled = 0;
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(query_process, ev, data)
@@ -205,6 +222,7 @@ PROCESS_THREAD(coap_process, ev, data)
   static coap_packet_t request[1];
   static msg_t* ptrMsg;
   char* newLine;
+  static struct ctimer heartbeat_disable_ctimer;
 
   PROCESS_BEGIN();
 
@@ -252,6 +270,10 @@ PROCESS_THREAD(coap_process, ev, data)
         coap_init_message(request, COAP_TYPE_CON, COAP_DELETE, 0);
       }
 
+      /* disable heartbeat for HEARTBEAT_DISABLE_TIME */
+      heartbeat_disable();
+      ctimer_set(&heartbeat_disable_ctimer, HEARTBEAT_DISABLE_TIME, heartbeat_enable, NULL);
+
       if(ptrMsg->type == T_TRIGGER_ACTION){
         //send non confirmable message
         coap_init_message(request, COAP_TYPE_NON, COAP_GET, 0);
@@ -261,7 +283,9 @@ PROCESS_THREAD(coap_process, ev, data)
         coap_transaction_t *tmpTransaction =  coap_new_transaction(request->mid, &brain_address, BRAIN_COAP_PORT);
         if(tmpTransaction) {
           tmpTransaction->packet_len = coap_serialize_message(request, tmpTransaction->packet);
+          sicslowpan_set_max_mac_transmissions(NORMAL_MESSAGE_MAX_MAC_TRANSMISSIONS);
           coap_send_transaction(tmpTransaction);
+          sicslowpan_reset_max_mac_transmissions();
           msg_coap_ack.id = query.id;
           msg_coap_ack.type = query.type;
           msg_coap_ack.len = 0;
@@ -278,7 +302,9 @@ PROCESS_THREAD(coap_process, ev, data)
         token[0] = random & 0xff;
         token[1] = (random>>8) & 0xff;
         coap_set_token(request, token, 2);
+        sicslowpan_set_max_mac_transmissions(IMPORTANT_MESSAGE_MAX_MAC_TRANSMISSIONS);
         COAP_BLOCKING_REQUEST(&brain_address, BRAIN_COAP_PORT, request, coap_chunk_handler);
+        sicslowpan_reset_max_mac_transmissions();
         msg_coap_ack.id = query.id;
         msg_coap_ack.type = query.type;
         msg_coap_ack.len = query.dataLen;
@@ -291,6 +317,23 @@ PROCESS_THREAD(coap_process, ev, data)
   PROCESS_END();
 }
 /*---------------------------------------------------------------------------*/
+static void heartbeat_send_msg(uint8_t id){
+  if(!heartbeat_response_sent){
+    heartbeat_response_sent = 1;
+    msg_t heartbeat_msg;
+    uint8_t response;
+    if(heartbeat_success_rate >= 50)
+      response = 1;
+    else
+      response = 0;
+    heartbeat_msg.id = id;
+    heartbeat_msg.type = T_HEARTBEAT;
+    heartbeat_msg.len = 1;
+    heartbeat_msg.data = &response;
+    send_msg(&heartbeat_msg);
+  }
+}
+
 static void heartbeat_callback(struct simple_udp_connection *c,
                        const uip_ipaddr_t *source_addr,
                        uint16_t source_port,
@@ -298,21 +341,17 @@ static void heartbeat_callback(struct simple_udp_connection *c,
                        uint16_t dest_port,
                        const uint8_t *data, uint16_t datalen){
   ctimer_stop(&heartbeat_timeout_ctimer);
-  msg_t heartbeat_msg;
-  uint8_t response = 1;
-  heartbeat_msg.type = T_HEARTBEAT;
-  heartbeat_msg.len = 1;
-  heartbeat_msg.data = &response;
-  send_msg(&heartbeat_msg);
+  heartbeat_success_rate += HEARTBEAT_SUCCESS_WEIGHT*HEARTBEAT_STEP;
+  if(heartbeat_success_rate > 100)
+    heartbeat_success_rate = 100;
+  heartbeat_send_msg(heartbeat_msg_id);
 }
 
 static void heartbeat_timeout_callback(void *p_data){
-  msg_t heartbeat_msg;
-  uint8_t response = 0;
-  heartbeat_msg.type = T_HEARTBEAT;
-  heartbeat_msg.len = 1;
-  heartbeat_msg.data = &response;
-  send_msg(&heartbeat_msg);
+  heartbeat_success_rate -= HEARTBEAT_FAILURE_WEIGHT*HEARTBEAT_STEP;
+  if(heartbeat_success_rate < 0)
+    heartbeat_success_rate = 0;
+  heartbeat_send_msg(heartbeat_msg_id);
 }
 
 PROCESS_THREAD(config_process, ev, data)
@@ -423,11 +462,18 @@ PROCESS_THREAD(config_process, ev, data)
         send_msg(&msg_buf);
       }
       else if(msg_ptr->type == T_HEARTBEAT){
-        if(brain_is_set == 1){
-          uint8_t heartbeat_buf[4];
-          memcpy(heartbeat_buf, "NBR?", 4);
-          simple_udp_sendto(&hearbeat_conn, heartbeat_buf, 4, &root_address);
-          ctimer_set(&heartbeat_timeout_ctimer, HEARTBEAT_TIMEOUT, heartbeat_timeout_callback, NULL);
+        heartbeat_response_sent = 0;
+        if(brain_is_set && rpl_get_any_dag()){
+          if(heartbeat_enabled){
+            heartbeat_msg_id = msg_buf.id;
+            uint8_t heartbeat_buf = '?';
+            sicslowpan_set_max_mac_transmissions(NORMAL_MESSAGE_MAX_MAC_TRANSMISSIONS);
+            simple_udp_sendto(&hearbeat_conn, &heartbeat_buf, 1, &root_address);
+            sicslowpan_reset_max_mac_transmissions();
+            ctimer_set(&heartbeat_timeout_ctimer, HEARTBEAT_TIMEOUT, heartbeat_timeout_callback, NULL);
+          }
+          else
+            heartbeat_send_msg(msg_buf.id);
         }
         else {
           resp_buf[0] = 0;
@@ -518,7 +564,9 @@ PROCESS_THREAD(discover_process, ev, data)
         print_addr(&nbr->ipaddr, buf, &buf_len);
         INFOT("DISCOVER: sending whois to: %s\n", buf);
         memcpy(buf, "NBR?", 4);
+        sicslowpan_set_max_mac_transmissions(IMPORTANT_MESSAGE_MAX_MAC_TRANSMISSIONS);
         simple_udp_sendto(&client_conn, buf, 4, &nbr->ipaddr);
+        sicslowpan_reset_max_mac_transmissions();
       }
       etimer_set(&discover_timeout, 3 * CLOCK_SECOND);
     } else if(ev == PROCESS_EVENT_TIMER) {

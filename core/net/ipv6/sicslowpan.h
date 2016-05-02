@@ -321,6 +321,12 @@ struct sicslowpan_nh_compressor {
 
 int sicslowpan_get_last_rssi(void);
 
+#if SICSLOWPAN_DYNAMIC_MAX_MAC_TRANSMISSIONS
+void sicslowpan_set_max_mac_transmissions(uint16_t val);
+uint16_t sicslowpan_get_max_mac_transmissions(void);
+void sicslowpan_reset_max_mac_transmissions(void);
+#endif /* SICSLOWPAN_CONF_DYNAMIC_MAX_MAC_TRANSMISSIONS */
+
 extern const struct network_driver sicslowpan_driver;
 
 #endif /* SICSLOWPAN_H_ */

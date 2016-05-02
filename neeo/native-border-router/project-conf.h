@@ -55,4 +55,7 @@
 /* used by wpcap (see /cpu/native/net/wpcap-drv.c) */
 #define SELECT_CALLBACK 1
 
+#undef SICSLOWPAN_CONF_MAX_MAC_TRANSMISSIONS
+#define SICSLOWPAN_CONF_MAX_MAC_TRANSMISSIONS 3
+
 #endif /* PROJECT_ROUTER_CONF_H_ */
