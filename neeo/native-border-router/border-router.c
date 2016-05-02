@@ -275,10 +275,10 @@ void discover_callback(struct simple_udp_connection *c,
     return;
 
   print_addr(source_addr, buf, &buf_len);
-  log_msg(LOG_INFO, "dicovery from: %s ", buf);
 
   if(strcmp((char*)data, "NBR?") == 0)
   {
+    log_msg(LOG_INFO, "dicovery from: %s ", buf);
     log_msg(LOG_TRACE, "I'm NBR!\n");
     buf_len = 48;
     memcpy(buf, "Y ", 2);
@@ -286,6 +286,13 @@ void discover_callback(struct simple_udp_connection *c,
     print_addr(&tun_address, buf+2, &buf_len);
     c->remote_port = source_port;
     simple_udp_sendto(c, buf, buf_len+2, source_addr);
+  }
+  if(strcmp((char*)data, "?") == 0)
+  {
+    log_msg(LOG_INFO, "heartbeat from: %s ", buf);
+    buf[0] = 'Y';
+    c->remote_port = source_port;
+    simple_udp_sendto(c, buf, 1, source_addr);
   }
 }
 /*---------------------------------------------------------------------------*/

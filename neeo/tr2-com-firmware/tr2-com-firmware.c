@@ -466,10 +466,9 @@ PROCESS_THREAD(config_process, ev, data)
         if(brain_is_set && rpl_get_any_dag()){
           if(heartbeat_enabled){
             heartbeat_msg_id = msg_buf.id;
-            uint8_t heartbeat_buf[4];
-            memcpy(heartbeat_buf, "NBR?", 4);
+            uint8_t heartbeat_buf = '?';
             sicslowpan_set_max_mac_transmissions(NORMAL_MESSAGE_MAX_MAC_TRANSMISSIONS);
-            simple_udp_sendto(&hearbeat_conn, heartbeat_buf, 4, &root_address);
+            simple_udp_sendto(&hearbeat_conn, &heartbeat_buf, 1, &root_address);
             sicslowpan_reset_max_mac_transmissions();
             ctimer_set(&heartbeat_timeout_ctimer, HEARTBEAT_TIMEOUT, heartbeat_timeout_callback, NULL);
           }
