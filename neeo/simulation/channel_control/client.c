@@ -45,6 +45,13 @@ static void discover_callback(struct simple_udp_connection *c,
       PRINTF("Message was: %s\n", data);
       PRINTF("Staying on this channel and waiting for orders\n");
     }
+    else if(data[0] == 'C' && datalen == 2){
+      set_rf_channel((radio_value_t)data[1]);
+      uip_ipaddr_t addr;
+      uip_create_linklocal_allnodes_mcast(&addr);
+      c->remote_port = source_port;
+      simple_udp_sendto(c, data, datalen, &addr);
+    }
     else
       PRINTF("Received unknown response with length %u: %s", datalen, data);
   }

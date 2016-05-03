@@ -8,6 +8,8 @@
 #define FIRST_CHANNEL 11
 #define LAST_CHANNEL 26
 
+#define PACKETS_PER_CHANNEL 100
+
 typedef enum channel_event_e {
   DISCOVER,
   BEST_CHANNEL

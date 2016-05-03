@@ -2,10 +2,14 @@
 #include "contiki.h"
 #include "radio.h"
 
+#define CHANNEL_TIMEOUT CLOCK_SECOND/10
 #define LOCAL_PORT 3200
 #define REMOTE_PORT 3200
 #define DISCOVERY_DUTY_CYCLE CLOCK_SECOND/2
+
 static struct etimer discovery_duty_cycle;
+static struct ctimer channel_timeout;
+static radio_value_t previous_channel, current_channel;
 
 #define DEBUG DEBUG_FULL
 #include "net/ip/uip-debug.h"
@@ -68,6 +72,16 @@ set_rf_channel(radio_value_t chan)
   return 0;
 }
 
+static void channel_timeout_callback(void *p_msg){
+  set_rf_channel(previous_channel);
+  uint8_t buf[2] = {'C', (uint8_t)current_channel};
+  uip_ipaddr_t addr;
+  uip_create_linklocal_allnodes_mcast(&addr);
+  simple_udp_sendto((struct simple_udp_connection *)p_msg, buf, 2, &addr);
+  set_rf_channel(current_channel);
+  ctimer_set(&channel_timeout, CHANNEL_TIMEOUT, channel_timeout_callback, NULL);
+}
+
 /*---------------------------------------------------------------------------*/
 static void discover_callback(struct simple_udp_connection *c,
                        const uip_ipaddr_t *source_addr, uint16_t source_port,
@@ -91,7 +105,29 @@ static void discover_callback(struct simple_udp_connection *c,
     uip_ipaddr_t addr;
     uip_create_linklocal_allnodes_mcast(&addr);
     simple_udp_sendto(c, buf, buf_len+2, &addr);
-    PRINTF("Staying on this channel\n");
+    
+    process_post_synch(&channel_control, PROCESS_EVENT_MSG, NULL);
+  }
+  else if(data[0] == 'C' && datalen == 2){
+    PRINTF("Changed successfully to new channel!\n");
+    /* TODO: Run channel tests */
+    previous_channel = current_channel;
+    current_channel++;
+    if(current_channel > LAST_CHANNEL){
+      PRINTF("Finished.");
+    }
+    else {
+      uint8_t buf[2] = {'C', current_channel};
+      uip_ipaddr_t addr;
+      uip_create_linklocal_allnodes_mcast(&addr);
+      c->remote_port = source_port;
+      simple_udp_sendto(c, buf, 2, &addr);
+      set_rf_channel(current_channel);
+      ctimer_set(&channel_timeout, CHANNEL_TIMEOUT, channel_timeout_callback, NULL);
+    }
+  }
+  else if(data[0] == 'T' && datalen == 2){
+    
   }
   else
     PRINTF("Received unknown response with length %u: %s", datalen, data);
@@ -116,6 +152,17 @@ PROCESS_THREAD(channel_control, ev, data)
 
     p_message = (int*) data;
     switch(ev){
+      case PROCESS_EVENT_MSG:
+        PRINTF("Starting channel stress test\n");
+        previous_channel = get_rf_channel();
+        current_channel = FIRST_CHANNEL;
+        uint8_t buf[2] = {'C', FIRST_CHANNEL};
+        uip_ipaddr_t addr;
+        uip_create_linklocal_allnodes_mcast(&addr);
+        simple_udp_sendto(&server_conn, buf, 2, &addr);
+        set_rf_channel(current_channel);
+        ctimer_set(&channel_timeout, CHANNEL_TIMEOUT, channel_timeout_callback, &server_conn);
+        break;
       case PROCESS_EVENT_TIMER:
         if(current_discovery_channel_index >= sizeof(discovery_channels)/sizeof(radio_value_t))
           current_discovery_channel_index = 0;
