@@ -23,6 +23,8 @@ typedef enum channel_status_e {
 
 typedef struct channel_quality_s {
   channel_status_t status;
+  int noisefloor_latest;
+  int noisefloor_average;
 } channel_quality_t;
 
 typedef struct channel_s {
@@ -31,10 +33,6 @@ typedef struct channel_s {
 } channel_t;
 
 const radio_value_t discovery_channels[] = {11, 16, 21, 26};
-#define DISCOVERY_CHANNELS_COUNT \
-do { \
-  sizeof(discovery_channels)/sizeof(radio_value_t); \
-} while(0)
 
 PROCESS(channel_control, "Channel control process");
 

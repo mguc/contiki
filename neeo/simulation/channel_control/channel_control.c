@@ -2,10 +2,13 @@
 #include "contiki.h"
 #include "radio.h"
 
+static channel_t channels[LAST_CHANNEL - FIRST_CHANNEL + 1];
+
 #define CHANNEL_TIMEOUT CLOCK_SECOND/10
 #define LOCAL_PORT 3200
 #define REMOTE_PORT 3200
 #define DISCOVERY_DUTY_CYCLE CLOCK_SECOND/2
+#define RSSI_WAIT_TIME RTIMER_SECOND / 20
 
 static struct etimer discovery_duty_cycle;
 static struct ctimer channel_timeout;
@@ -75,6 +78,7 @@ set_rf_channel(radio_value_t chan)
 
 static void channel_timeout_callback(void *p_msg){
   PRINTF("Timed out\n");
+  set_rf_channel(current_channel);
   uint8_t buf[2] = {'C', (uint8_t)current_channel};
   uip_ipaddr_t addr;
   uip_create_linklocal_allnodes_mcast(&addr);
@@ -109,23 +113,37 @@ static void discover_callback(struct simple_udp_connection *c,
     process_post_synch(&channel_control, PROCESS_EVENT_MSG, NULL);
   }
   else if(data[0] == 'C' && datalen == 2){
+    if(data[1] != (uint8_t)current_channel)
+      return;
     ctimer_stop(&channel_timeout);
     set_rf_channel(current_channel);
     PRINTF("Changed successfully to new channel!\n");
-    /* TODO: Run channel tests */
+    
+    NETSTACK_RADIO.get_value(RADIO_PARAM_RSSI, &channels[current_channel-FIRST_CHANNEL].quality.noisefloor_latest);
+    channels[current_channel-FIRST_CHANNEL].quality.noisefloor_average = ( 4 * channels[current_channel-FIRST_CHANNEL].quality.noisefloor_latest \
+      + 12 * channels[current_channel-FIRST_CHANNEL].quality.noisefloor_average) / 16;
+    
     ++current_channel;
     if(current_channel > LAST_CHANNEL){
-      current_channel = LAST_CHANNEL;
+      current_channel = FIRST_CHANNEL;
+      static int iterations = 1;
+      /* Print noise floor summary */
+      PRINTF("Noise floor summary after %d iterations:\n", iterations++);
+      int i;
+      for(i = FIRST_CHANNEL; i <= LAST_CHANNEL; i++) {
+        PRINTF("  ch %d: latest %d, avr %d dBm\n", i,
+               channels[current_channel-FIRST_CHANNEL].quality.noisefloor_latest,
+               channels[current_channel-FIRST_CHANNEL].quality.noisefloor_average);
+      }
       PRINTF("Finished.\n");
     }
-    else {
-      uint8_t buf[2] = {'C', (uint8_t)current_channel};
-      uip_ipaddr_t addr;
-      uip_create_linklocal_allnodes_mcast(&addr);
-      c->remote_port = source_port;
-      simple_udp_sendto(c, buf, 2, &addr);
-      ctimer_set(&channel_timeout, CHANNEL_TIMEOUT, channel_timeout_callback, &server_conn);
-    }
+    
+    uint8_t buf[2] = {'C', (uint8_t)current_channel};
+    uip_ipaddr_t addr;
+    uip_create_linklocal_allnodes_mcast(&addr);
+    c->remote_port = source_port;
+    simple_udp_sendto(c, buf, 2, &addr);
+    ctimer_set(&channel_timeout, CHANNEL_TIMEOUT, channel_timeout_callback, &server_conn);
   }
   else if(data[0] == 'T' && datalen == 2){
     
@@ -142,6 +160,14 @@ PROCESS_THREAD(channel_control, ev, data)
   static int *p_message;
   
   PROCESS_BEGIN();
+  
+  int i;
+  for(i = FIRST_CHANNEL; i <= LAST_CHANNEL; i++) {
+    channels[i-FIRST_CHANNEL].number = (uint8_t)i;
+    channels[i-FIRST_CHANNEL].quality.status = VERY_GOOD;
+    channels[i-FIRST_CHANNEL].quality.noisefloor_latest = 0;
+    channels[i-FIRST_CHANNEL].quality.noisefloor_average = -100;
+  }
   
   set_rf_channel(discovery_channels[current_discovery_channel_index++]);
   simple_udp_register(&server_conn, LOCAL_PORT, NULL, REMOTE_PORT, discover_callback);
