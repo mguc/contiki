@@ -144,7 +144,7 @@ sendir_handler(REQUEST* request, RESPONSE* response)
   else if(sendir_state.state == COMMAND_STATE_ERROR)
   {
     log_msg(LOG_ERROR, "last request returned error: %u\n", sendir_state.result);
-    sendir_state.state = COMMAND_STATE_PENDING;
+    sendir_state.state = COMMAND_STATE_IDLE;
     sendir_state.result = -1;
   }
 

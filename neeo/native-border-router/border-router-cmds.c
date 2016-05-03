@@ -107,10 +107,9 @@ border_router_cmd_handler(const uint8_t *data, int len)
         // !Isr -> s = status(0-OK, 1-ERR), r=result(code of error etc.)
         uint8_t status = data[2];
         printf("sendir: JN5168 response to last request: %s\n", (status?"ERR":"OK"));
-        if(status == 0)
-          sendir_state.state = COMMAND_STATE_IDLE;
-        else
-          sendir_state.state = COMMAND_STATE_ERROR;
+        sendir_state.state = COMMAND_STATE_IDLE;
+        if(data[3] == 2)
+          sendir_state.state = COMMAND_STATE_PENDING;  
         sendir_state.result = data[3];
       }
       return 1;
