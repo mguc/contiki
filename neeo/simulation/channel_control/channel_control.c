@@ -10,6 +10,7 @@
 static struct etimer discovery_duty_cycle;
 static struct ctimer channel_timeout;
 static radio_value_t previous_channel, current_channel;
+static struct simple_udp_connection server_conn;
 
 #define DEBUG DEBUG_FULL
 #include "net/ip/uip-debug.h"
@@ -73,13 +74,12 @@ set_rf_channel(radio_value_t chan)
 }
 
 static void channel_timeout_callback(void *p_msg){
-  set_rf_channel(previous_channel);
+  PRINTF("Timed out\n");
   uint8_t buf[2] = {'C', (uint8_t)current_channel};
   uip_ipaddr_t addr;
   uip_create_linklocal_allnodes_mcast(&addr);
   simple_udp_sendto((struct simple_udp_connection *)p_msg, buf, 2, &addr);
-  set_rf_channel(current_channel);
-  ctimer_set(&channel_timeout, CHANNEL_TIMEOUT, channel_timeout_callback, NULL);
+  ctimer_set(&channel_timeout, CHANNEL_TIMEOUT, channel_timeout_callback, p_msg);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -95,7 +95,7 @@ static void discover_callback(struct simple_udp_connection *c,
     uint32_t buf_len = 48;
     char buf[48] = {0};
     print_addr(source_addr, buf, &buf_len);
-    PRINTF("Dicovery from: %s on channel %d", buf, get_rf_channel());
+    PRINTF("Dicovery from: %s on channel %d\n", buf, get_rf_channel());
     PRINTF("I'm NBR!\n");
     buf_len = 48;
     memcpy(buf, "Y ", 2);
@@ -109,21 +109,22 @@ static void discover_callback(struct simple_udp_connection *c,
     process_post_synch(&channel_control, PROCESS_EVENT_MSG, NULL);
   }
   else if(data[0] == 'C' && datalen == 2){
+    ctimer_stop(&channel_timeout);
+    set_rf_channel(current_channel);
     PRINTF("Changed successfully to new channel!\n");
     /* TODO: Run channel tests */
-    previous_channel = current_channel;
-    current_channel++;
+    ++current_channel;
     if(current_channel > LAST_CHANNEL){
-      PRINTF("Finished.");
+      current_channel = LAST_CHANNEL;
+      PRINTF("Finished.\n");
     }
     else {
-      uint8_t buf[2] = {'C', current_channel};
+      uint8_t buf[2] = {'C', (uint8_t)current_channel};
       uip_ipaddr_t addr;
       uip_create_linklocal_allnodes_mcast(&addr);
       c->remote_port = source_port;
       simple_udp_sendto(c, buf, 2, &addr);
-      set_rf_channel(current_channel);
-      ctimer_set(&channel_timeout, CHANNEL_TIMEOUT, channel_timeout_callback, NULL);
+      ctimer_set(&channel_timeout, CHANNEL_TIMEOUT, channel_timeout_callback, &server_conn);
     }
   }
   else if(data[0] == 'T' && datalen == 2){
@@ -136,7 +137,6 @@ static void discover_callback(struct simple_udp_connection *c,
 
 PROCESS_THREAD(channel_control, ev, data)
 {
-  static struct simple_udp_connection server_conn;
   
   static int current_discovery_channel_index = 0;
   static int *p_message;
@@ -154,13 +154,11 @@ PROCESS_THREAD(channel_control, ev, data)
     switch(ev){
       case PROCESS_EVENT_MSG:
         PRINTF("Starting channel stress test\n");
-        previous_channel = get_rf_channel();
         current_channel = FIRST_CHANNEL;
-        uint8_t buf[2] = {'C', FIRST_CHANNEL};
+        uint8_t buf[2] = {'C', (uint8_t)current_channel};
         uip_ipaddr_t addr;
         uip_create_linklocal_allnodes_mcast(&addr);
         simple_udp_sendto(&server_conn, buf, 2, &addr);
-        set_rf_channel(current_channel);
         ctimer_set(&channel_timeout, CHANNEL_TIMEOUT, channel_timeout_callback, &server_conn);
         break;
       case PROCESS_EVENT_TIMER:

@@ -5,7 +5,9 @@
 #define LOCAL_PORT 3200
 #define REMOTE_PORT 3200
 #define DISCOVERY_DUTY_CYCLE CLOCK_SECOND/10
+#define SET_CHANNEL_DELAY CLOCK_SECOND/100
 static struct etimer discovery_duty_cycle;
+static struct ctimer set_channel_delay;
 
 #define DEBUG DEBUG_FULL
 #include "net/ip/uip-debug.h"
@@ -32,6 +34,11 @@ set_rf_channel(radio_value_t chan)
   return 0;
 }
 
+static void
+set_rf_channel_callback(uint8_t *p_channel){
+  set_rf_channel(*p_channel);
+}
+
 /*---------------------------------------------------------------------------*/
 static void discover_callback(struct simple_udp_connection *c,
                        const uip_ipaddr_t *source_addr, uint16_t source_port,
@@ -45,16 +52,18 @@ static void discover_callback(struct simple_udp_connection *c,
       PRINTF("Message was: %s\n", data);
       PRINTF("Staying on this channel and waiting for orders\n");
     }
-    else if(data[0] == 'C' && datalen == 2){
-      set_rf_channel((radio_value_t)data[1]);
-      uip_ipaddr_t addr;
-      uip_create_linklocal_allnodes_mcast(&addr);
-      c->remote_port = source_port;
-      simple_udp_sendto(c, data, datalen, &addr);
-    }
     else
       PRINTF("Received unknown response with length %u: %s", datalen, data);
   }
+  else if(data[0] == 'C' && datalen == 2) {
+    uip_ipaddr_t addr;
+    uip_create_linklocal_allnodes_mcast(&addr);
+    c->remote_port = source_port;
+    simple_udp_sendto(c, data, datalen, &addr);
+    ctimer_set(&set_channel_delay, SET_CHANNEL_DELAY, set_rf_channel_callback, &data[1]);
+  }
+  else
+    PRINTF("Received unknown response with length %u: %s", datalen, data);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -63,7 +72,7 @@ PROCESS_THREAD(channel_control, ev, data)
   static struct simple_udp_connection server_conn;
   
   static int current_discovery_channel_index = 0;
-  static int *p_message;
+  static uint8_t *p_message;
   static uip_ipaddr_t addr;
   static uint8_t buf[4]; 
   PROCESS_BEGIN();
@@ -74,8 +83,10 @@ PROCESS_THREAD(channel_control, ev, data)
   while(1) {
     PROCESS_YIELD();
 
-    p_message = (int*) data;
+    p_message = (uint8_t*) data;
     switch(ev){
+      case PROCESS_EVENT_MSG:
+        break;
       case PROCESS_EVENT_TIMER:
         if(current_discovery_channel_index >= sizeof(discovery_channels)/sizeof(radio_value_t))
           current_discovery_channel_index = 0;
