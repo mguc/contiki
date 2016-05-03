@@ -38,11 +38,16 @@ static void discover_callback(struct simple_udp_connection *c,
                        const uip_ipaddr_t *dest_addr, uint16_t dest_port,
                        const uint8_t *data, uint16_t datalen)
 {
-  if(strcmp((char*)data, "Y") == 0 && datalen == 1) {
-    PRINTF("Received response on channel: %u\n", get_rf_channel());
+  if(datalen > 2){
+    if(data[0] == 'Y' && data[1] == ' ') {
+      etimer_stop(&discovery_duty_cycle);
+      PRINTF("Received discovery response on channel: %u\n", get_rf_channel());
+      PRINTF("Message was: %s\n", data);
+      PRINTF("Staying on this channel and waiting for orders\n");
+    }
+    else
+      PRINTF("Received unknown response with length %u: %s", datalen, data);
   }
-  else
-    PRINTF("Received unknown response with length %u: %s", datalen, data);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -53,7 +58,7 @@ PROCESS_THREAD(channel_control, ev, data)
   static int current_discovery_channel_index = 0;
   static int *p_message;
   static uip_ipaddr_t addr;
-  static uint8_t buf; 
+  static uint8_t buf[4]; 
   PROCESS_BEGIN();
   
   simple_udp_register(&server_conn, LOCAL_PORT, NULL, REMOTE_PORT, discover_callback);
@@ -70,9 +75,9 @@ PROCESS_THREAD(channel_control, ev, data)
         
         set_rf_channel(discovery_channels[current_discovery_channel_index++]);
         uip_create_linklocal_allnodes_mcast(&addr);
-        buf = 'H';
-        PRINTF("Sending heartbeat on channel: %u\n", get_rf_channel());
-        simple_udp_sendto(&server_conn, &buf, 1, &addr);
+        memcpy(buf, "NBR?", 4);
+        PRINTF("Sending discovery message on channel: %u\n", get_rf_channel());
+        simple_udp_sendto(&server_conn, buf, 4, &addr);
         etimer_set(&discovery_duty_cycle, DISCOVERY_DUTY_CYCLE);
         break;
       default:
