@@ -1,4 +1,4 @@
-CONTIKI_PROJECT = channel_control
+CONTIKI_PROJECT = channel_control client
 all: $(CONTIKI_PROJECT)
 
 CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
