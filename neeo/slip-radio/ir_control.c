@@ -202,7 +202,7 @@ ir_start(const uint16_t *data, uint32_t len)
     goto done;
 
 cleanup:
-    ir_sequence.state = SEQ_STATE_SENT;
+    ir_sequence.state = SEQ_STATE_READY;
 
 done:
     return ret;
@@ -211,7 +211,8 @@ done:
 int
 ir_stop(void)
 {
-    ir_stop_internal();
+    // Ensure that the current command finishes
+    ir_sequence.count = 0;
 
     return 0;
 }
