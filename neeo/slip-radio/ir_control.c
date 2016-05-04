@@ -133,17 +133,19 @@ ir_init(void)
 int
 ir_start(const uint16_t *data, uint32_t len)
 {
+    int ret = 0;
     if(len > IR_CONTROL_BUF_MAX_SIZE) {
         PRINTF("IR:ERR Payload too large! %u\n", len);
-        return 1;
+        ret = 1;
+        goto cleanup;
     }
     if(ir_sequence.state != SEQ_STATE_READY) {
         PRINTF("IR:ERR IR Blaster busy! %u\n", ir_sequence.state);
-        return 2;
+        ret = 2;
+        goto cleanup;
     }
 
     ir_sequence.state = SEQ_STATE_PENDING;
-    int ret = 0;
     uint16_t i;
     uint32_t freq = 0;
 
@@ -202,7 +204,8 @@ ir_start(const uint16_t *data, uint32_t len)
     goto done;
 
 cleanup:
-    ir_sequence.state = SEQ_STATE_READY;
+    if(ret != 2)
+      ir_sequence.state = SEQ_STATE_READY;
 
 done:
     return ret;
