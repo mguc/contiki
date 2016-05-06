@@ -55,6 +55,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include "slip-config.h"
 #include "log_helper.h"
 
 #define DEBUG DEBUG_FULL
@@ -289,7 +290,8 @@ void discover_callback(struct simple_udp_connection *c,
   }
   else if(data[0] == '?' && datalen == 1)
   {
-    log_msg(LOG_INFO, "heartbeat from: %s ", buf);
+    if(slip_config_get_verbose() >= 2)
+      log_msg(LOG_INFO, "heartbeat from: %s ", buf);
     buf[0] = 'Y';
     c->remote_port = source_port;
     simple_udp_sendto(c, buf, 1, source_addr);

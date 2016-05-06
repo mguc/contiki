@@ -46,6 +46,7 @@
 #include <sys/ioctl.h>
 #include <err.h>
 #include "contiki.h"
+#include "slip-config.h"
 
 int slip_config_verbose = 0;
 const char *slip_config_ipaddr;
@@ -58,6 +59,10 @@ uint16_t slip_config_basedelay = 0;
 #define BAUDRATE B115200
 #endif
 speed_t slip_config_b_rate = BAUDRATE;
+
+int slip_config_get_verbose(void){
+  return slip_config_verbose;
+}
 
 /*---------------------------------------------------------------------------*/
 int
