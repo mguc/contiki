@@ -55,7 +55,7 @@ timer2_callback(uint32_t u32DeviceId, uint32_t u32ItemBitmap)
 void
 timer3_callback(uint32_t u32DeviceId, uint32_t u32ItemBitmap)
 {
-    if (currentRepetition < ir_sequence.count) {
+    if (currentRepetition < ir_sequence.count || !(sequence_index == ir_sequence.offset - 1)) {
         if (currentVal==1) {
             // ON sequence
             vAHI_TimerStartRepeat(E_AHI_TIMER_2, ir_sequence.period/2, ir_sequence.period );
