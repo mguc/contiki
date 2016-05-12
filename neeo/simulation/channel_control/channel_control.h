@@ -8,7 +8,7 @@
 #define FIRST_CHANNEL 11
 #define LAST_CHANNEL 26
 
-#define PACKETS_PER_CHANNEL 100
+#define NOISEFLOOR_SAMPLES 8
 
 typedef enum channel_event_e {
   DISCOVER,
@@ -23,8 +23,9 @@ typedef enum channel_status_e {
 
 typedef struct channel_quality_s {
   channel_status_t status;
-  int noisefloor_latest;
+  int noisefloor_latest_sample;
   int noisefloor_average;
+  int noisefloor_samples[NOISEFLOOR_SAMPLES];
 } channel_quality_t;
 
 typedef struct channel_s {
@@ -32,7 +33,10 @@ typedef struct channel_s {
   channel_quality_t quality;
 } channel_t;
 
-const radio_value_t discovery_channels[] = {11, 16, 21, 26};
+#define OPERATING_CHANNELS 4
+const radio_value_t operating_channels[OPERATING_CHANNELS] = {11, 16, 21, 26};
+int get_rf_channel(void);
+int set_rf_channel(radio_value_t ch);
 
 PROCESS(channel_control, "Channel control process");
 

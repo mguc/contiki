@@ -5,16 +5,15 @@
 #define LOCAL_PORT 3200
 #define REMOTE_PORT 3200
 #define DISCOVERY_DUTY_CYCLE CLOCK_SECOND/10
-#define SET_CHANNEL_DELAY CLOCK_SECOND/100
+
 static struct etimer discovery_duty_cycle;
-static struct ctimer set_channel_delay;
 
 #define DEBUG DEBUG_FULL
 #include "net/ip/uip-debug.h"
 
 AUTOSTART_PROCESSES(&channel_control);
 
-static int
+int
 get_rf_channel(void)
 {
   radio_value_t chan;
@@ -22,7 +21,7 @@ get_rf_channel(void)
   return (int)chan;
 }
 
-static int
+int
 set_rf_channel(radio_value_t chan)
 {
   if(chan < FIRST_CHANNEL || chan > LAST_CHANNEL){
@@ -32,11 +31,6 @@ set_rf_channel(radio_value_t chan)
   PRINTF("Setting new channel: %u\n", chan);
   NETSTACK_RADIO.set_value(RADIO_PARAM_CHANNEL, chan);
   return 0;
-}
-
-static void
-set_rf_channel_callback(uint8_t *p_channel){
-  set_rf_channel(*p_channel);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -55,15 +49,6 @@ static void discover_callback(struct simple_udp_connection *c,
     else
       PRINTF("Received unknown response with length %u: %s", datalen, data);
   }
-  else if(data[0] == 'C' && datalen == 2) {
-    uip_ipaddr_t addr;
-    uip_create_linklocal_allnodes_mcast(&addr);
-    c->remote_port = source_port;
-    simple_udp_sendto(c, data, datalen, &addr);
-    ctimer_set(&set_channel_delay, SET_CHANNEL_DELAY, set_rf_channel_callback, &data[1]);
-  }
-  else
-    PRINTF("Received unknown response with length %u: %s", datalen, data);
 }
 /*---------------------------------------------------------------------------*/
 
@@ -72,7 +57,6 @@ PROCESS_THREAD(channel_control, ev, data)
   static struct simple_udp_connection server_conn;
   
   static int current_discovery_channel_index = 0;
-  static uint8_t *p_message;
   static uip_ipaddr_t addr;
   static uint8_t buf[4]; 
   PROCESS_BEGIN();
@@ -83,15 +67,14 @@ PROCESS_THREAD(channel_control, ev, data)
   while(1) {
     PROCESS_YIELD();
 
-    p_message = (uint8_t*) data;
     switch(ev){
       case PROCESS_EVENT_MSG:
         break;
       case PROCESS_EVENT_TIMER:
-        if(current_discovery_channel_index >= sizeof(discovery_channels)/sizeof(radio_value_t))
+        if(current_discovery_channel_index >= OPERATING_CHANNELS)
           current_discovery_channel_index = 0;
         
-        set_rf_channel(discovery_channels[current_discovery_channel_index++]);
+        set_rf_channel(operating_channels[current_discovery_channel_index++]);
         uip_create_linklocal_allnodes_mcast(&addr);
         memcpy(buf, "NBR?", 4);
         PRINTF("Sending discovery message on channel: %u\n", get_rf_channel());
