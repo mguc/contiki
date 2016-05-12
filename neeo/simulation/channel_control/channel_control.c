@@ -5,15 +5,11 @@
 
 static channel_t channels[OPERATING_CHANNELS];
 
-#define CHANNEL_TIMEOUT CLOCK_SECOND/10
-#define CHANNEL_MAX_TRIES 3
 #define LOCAL_PORT 3200
 #define REMOTE_PORT 3200
-#define DISCOVERY_DUTY_CYCLE CLOCK_SECOND/2
+
 #define RSSI_WAIT_TIME RTIMER_SECOND / 20
 #define NOISE_MAX_SHIFT 10
-
-static struct etimer discovery_duty_cycle;
 
 static struct simple_udp_connection server_conn;
 
@@ -98,7 +94,7 @@ static void discover_callback(struct simple_udp_connection *c,
     uip_ipaddr_t addr;
     uip_create_linklocal_allnodes_mcast(&addr);
     simple_udp_sendto(c, buf, buf_len+2, &addr);
-    
+
   }
   else
     PRINTF("Received unknown response with length %u: %s", datalen, data);
@@ -116,7 +112,7 @@ void channel_noise_update(channel_t *ch){
   int i, current_average = 0;
   for(i = 0; i < NOISEFLOOR_SAMPLES; i++)
     current_average += ch->quality.noisefloor_samples[i];
-  
+
   ch->quality.noisefloor_average = current_average/NOISEFLOOR_SAMPLES;
 }
 
@@ -169,9 +165,10 @@ static int channels_get_best(channel_t *p_channels, uint32_t number_of_channels)
 
 PROCESS_THREAD(channel_control, ev, data)
 {
+  static struct etimer et;
   static int current_channel_index = 0;
   static int initial_noise_average = 0;
-  
+
   PROCESS_BEGIN();
 
   channels_init(channels, OPERATING_CHANNELS);
@@ -181,10 +178,10 @@ PROCESS_THREAD(channel_control, ev, data)
   initial_noise_average = channels[current_channel_index].quality.noisefloor_average;
   set_rf_channel(channels[current_channel_index].number);
   simple_udp_register(&server_conn, LOCAL_PORT, NULL, REMOTE_PORT, discover_callback);
-  
-  etimer_set(&discovery_duty_cycle, CLOCK_SECOND);
+
+  etimer_set(&et, CLOCK_SECOND);
   while(1) {
-    
+
     PROCESS_YIELD();
 
     switch(ev){
@@ -195,7 +192,7 @@ PROCESS_THREAD(channel_control, ev, data)
         if(initial_noise_average + NOISE_MAX_SHIFT < channels[current_channel_index].quality.noisefloor_average)
           PRINTF("There might be a better channel! Noise: %d\n", \
             channels[current_channel_index].quality.noisefloor_average);
-        etimer_set(&discovery_duty_cycle, CLOCK_SECOND);
+        etimer_set(&et, CLOCK_SECOND);
         break;
       default:
         break;
