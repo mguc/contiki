@@ -51,6 +51,7 @@
 #include "ir_control.h"
 #include "ir-learn.h"
 #include "common-defs.h"
+#include "channel_control.h"
 
 #define FW_MAJOR_VERSION    "1"
 
@@ -258,7 +259,7 @@ putchar(int c)
 #endif
 /*---------------------------------------------------------------------------*/
 PROCESS(slip_radio_process, "Slip radio process");
-AUTOSTART_PROCESSES(&slip_radio_process, &ir_control_process, &ir_learn_process);
+AUTOSTART_PROCESSES(&slip_radio_process, &ir_control_process, &ir_learn_process, &channel_control);
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(slip_radio_process, ev, data)
 {
