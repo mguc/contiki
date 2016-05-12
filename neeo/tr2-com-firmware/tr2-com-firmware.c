@@ -528,7 +528,7 @@ void discover_callback(struct simple_udp_connection *c,
 PROCESS_THREAD(discover_process, ev, data)
 {
   static struct simple_udp_connection client_conn;
-  static uip_ds6_nbr_t *nbr;
+  static uip_ipaddr_t addr;
   static msg_t msg_buf;
   static struct etimer discover_timeout;
   msg_t* msg_ptr;
@@ -557,17 +557,14 @@ PROCESS_THREAD(discover_process, ev, data)
       msg_buf.type = msg_ptr->type;
       msg_buf.id = msg_ptr->id;
 
-      for(nbr = nbr_table_head(ds6_neighbors);
-          nbr != NULL;
-          nbr = nbr_table_next(ds6_neighbors, nbr)) {
+      uip_create_linklocal_allnodes_mcast(&addr);
+      print_addr(&addr, buf, &buf_len);
+      INFOT("DISCOVER: sending whois to: %s\n", buf);
+      memcpy(buf, "NBR?", 4);
+      sicslowpan_set_max_mac_transmissions(NORMAL_MESSAGE_MAX_MAC_TRANSMISSIONS);
+      simple_udp_sendto(&client_conn, buf, 4, &addr);
+      sicslowpan_reset_max_mac_transmissions();
 
-        print_addr(&nbr->ipaddr, buf, &buf_len);
-        INFOT("DISCOVER: sending whois to: %s\n", buf);
-        memcpy(buf, "NBR?", 4);
-        sicslowpan_set_max_mac_transmissions(IMPORTANT_MESSAGE_MAX_MAC_TRANSMISSIONS);
-        simple_udp_sendto(&client_conn, buf, 4, &nbr->ipaddr);
-        sicslowpan_reset_max_mac_transmissions();
-      }
       etimer_set(&discover_timeout, 3 * CLOCK_SECOND);
     } else if(ev == PROCESS_EVENT_TIMER) {
       cp6list[cp6list_idx-1] = '\0';
