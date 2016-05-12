@@ -185,6 +185,8 @@ slip_radio_cmd_handler(const uint8_t *data, int len)
   } else if(uip_buf[0] == '?') {
     PRINTF("Got request message of type %c\n", uip_buf[1]);
     if(data[1] == 'M') {
+      // stop polling led control pin
+      led_stop_polling();
       /* this is just a test so far... just to see if it works */
       uip_buf[0] = '!';
       uip_buf[1] = 'M';
@@ -274,7 +276,6 @@ PROCESS_THREAD(slip_radio_process, ev, data)
 
   etimer_set(&et, CLOCK_SECOND * 3);
   led_init();
-  led_blink(LED_MODE_BLINK_500);
 
   while(1) {
     PROCESS_YIELD();

@@ -28,17 +28,20 @@ static void led_off(){
 
 static void led_gpio_control_callback(void *ptr){
   if(u32AHI_DioReadInput() & LED_CONTROL_PIN){
-    if(led_color != LED_RED || blink_period != CLOCK_CONF_SECOND/4){
-      led_set_color(LED_RED);
+    if(led_color != LED_WHITE || blink_period != CLOCK_CONF_SECOND/4){
+      led_set_color(LED_WHITE);
       led_blink(LED_MODE_BLINK_500);
     }
   }
-  else if(led_color != LED_WHITE || blink_period != CLOCK_CONF_SECOND/4){
-    led_set_color(LED_WHITE);
+  else if(led_color != LED_RED || blink_period != CLOCK_CONF_SECOND/4){
+    led_set_color(LED_RED);
     led_blink(LED_MODE_BLINK_500);
   }
-  
   ctimer_set(&gpio_control_timer, GPIO_POLL_TIME, led_gpio_control_callback, NULL);
+}
+
+void led_stop_polling(){
+  ctimer_stop(&gpio_control_timer);
 }
 
 void blink_callback(void *ptr)
@@ -85,7 +88,6 @@ void led_blink(uint8_t mode)
         is_led_on = 1;
         break;
 		case LED_WHITE_ON:
-				ctimer_stop(&gpio_control_timer);
 				blink_period = 0;
 				led_set_color(LED_WHITE);
 				led_on();
