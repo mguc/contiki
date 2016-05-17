@@ -4,6 +4,7 @@
 #include <string.h>
 #include "dev/watchdog.h"
 #include "net/rpl/rpl.h"
+#include "net/rpl/rpl-private.h"
 #include "sys/etimer.h"
 #include "lib/ringbuf.h"
 #include "version.h"
@@ -63,7 +64,6 @@ typedef struct cp6_s {
 static uip_ipaddr_t brain_address, root_address;
 static query_state_t query;
 static msg_t msg_coap_ack;
-static struct etimer et;
 static struct etimer query_timeout_timer;
 static cp6_t cp6list[CP6_LIST_MAX];
 static int cp6_count;
@@ -169,7 +169,6 @@ PROCESS_THREAD(query_process, ev, data)
   msg_t msg_resp;
   uint8_t resp[16];
   int ret, i;
-  static struct etimer dag_registered_timer;
 
   PROCESS_BEGIN();
   INFOT("INIT: Starting query process\n");
@@ -184,17 +183,6 @@ PROCESS_THREAD(query_process, ev, data)
   uip_ds6_init();
   uip_nd6_init();
   rpl_init();
-
-
-  while(rpl_get_any_dag() == NULL){
-	  INFOT("Waiting to join a network\n");
-	  dis_output(NULL);
-	  etimer_set(&dag_registered_timer, CLOCK_SECOND);
-	  PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&dag_registered_timer));
-  }
-
-  rpl_dag_t *rpl_current_dag = rpl_get_any_dag();
-  root_address = rpl_current_dag->dag_id;
 
   while(1) {
     PROCESS_YIELD();
@@ -390,17 +378,15 @@ PROCESS_THREAD(config_process, ev, data)
 {
   msg_t* msg_ptr;
   static msg_t msg_buf;
-  static uip_ds6_nbr_t *nbr;
   char resp_buf[40];
   char addr_buf[48];
   uint32_t addr_buf_len = 48;
   radio_value_t rssi_val = 0;
-  int ret;
   static struct simple_udp_connection hearbeat_conn;
+  static struct etimer et;
 
   PROCESS_BEGIN();
   INFOT("INIT: Starting config process\n");
-  etimer_set(&et, CLOCK_SECOND);
   simple_udp_register(&hearbeat_conn,
                       3001,
                       NULL,
@@ -450,31 +436,28 @@ PROCESS_THREAD(config_process, ev, data)
           uip_ipaddr_copy(&brain_address, &tmp_address);
           msg_buf.data = NULL;
           msg_buf.len = 0;
+          brain_is_set = 1;
         }
         else {
         	strcpy(resp_buf, "Not valid address!");
         	msg_buf.type = T_ERROR_RESPONSE;
         	msg_buf.data = (uint8_t*)resp_buf;
         	msg_buf.len = strlen(resp_buf) + 1;
+          brain_is_set = 0;
         }
-        if(!cp6_count){
-          process_post_synch(&discover_process, PROCESS_EVENT_MSG, NULL);
+        send_msg(&msg_buf);
+
+        if(brain_is_set){
+          rpl_dag_t *rpl_current_dag = rpl_get_any_dag();
+          if(rpl_current_dag != NULL)
+            rpl_free_instance(rpl_current_dag->instance);
+
+          etimer_set(&et, CLOCK_SECOND);
+          process_post_synch(&discover_process, PROCESS_EVENT_MSG, &msg_buf);
         }
-        else {
-          int i;
-          for(i = 0; i < cp6_count; i++){
-            if(uip_ipaddr_cmp(&cp6list[i].addr, &brain_address)){
-              set_rf_channel(cp6list[i].channel);
-              break;
-            }
-          }
-        }
+
         print_addr(&brain_address, addr_buf, &addr_buf_len);
         INFOT("INIT: Brain address: %s\n", addr_buf);
-        brain_is_set = 1;
-        // TODO: start pair process, open TCP/IP connection?
-
-        send_msg(&msg_buf);
       }
       else if(msg_ptr->type == T_GET_FW_VERSION)
       {
@@ -527,19 +510,23 @@ PROCESS_THREAD(config_process, ev, data)
     }
     else if(ev == PROCESS_EVENT_TIMER)
     {
-      uint32_t buf_len = 64;
-      char buf[64];
-      if(nbr_table_head(ds6_neighbors))
-        INFOT("Neighbor list:\n");
-      for(nbr = nbr_table_head(ds6_neighbors);
-          nbr != NULL;
-          nbr = nbr_table_next(ds6_neighbors, nbr)) {
-        INFO("\t\t");
-        buf_len = 64;
-        print_addr(&nbr->ipaddr, buf, &buf_len);
-        INFO("%s\n", buf);
+      rpl_dag_t *rpl_current_dag = rpl_get_any_dag();
+      if(rpl_current_dag == NULL){
+        INFOT("Waiting to join a network\n");
+        dis_output(NULL);
+        etimer_set(&et, CLOCK_SECOND);
       }
-      etimer_set(&et, CLOCK_SECOND);
+      else if(memcmp(&rpl_current_dag->dag_id, &brain_address, 8) != 0){
+        INFOT("Joined the wrong network!\n");
+        rpl_free_instance(rpl_current_dag->instance);
+        // send DIS to join new network
+        dis_output(NULL);
+        etimer_set(&et, CLOCK_SECOND);
+      }
+      else{
+        INFOT("Joined network!\n");
+        root_address = rpl_current_dag->dag_id;
+      }
     }
   }
   PROCESS_END();
@@ -596,10 +583,11 @@ PROCESS_THREAD(discover_process, ev, data)
       cp6_count = 0;
       current_channel_index = 0;
       brain_found = 0;
-
-      msg_ptr = (msg_t*)data;
-      msg_buf.type = msg_ptr->type;
-      msg_buf.id = msg_ptr->id;
+      if(data != NULL){
+        msg_ptr = (msg_t*)data;
+        msg_buf.type = msg_ptr->type;
+        msg_buf.id = msg_ptr->id;
+      }
 
       set_rf_channel(operating_channels[current_channel_index]);
       uip_create_linklocal_allnodes_mcast(&addr);
@@ -611,7 +599,7 @@ PROCESS_THREAD(discover_process, ev, data)
       etimer_set(&discover_timeout, DISCOVERY_DUTY_CYCLE);
     } else if(ev == PROCESS_EVENT_TIMER) {
       ++current_channel_index;
-      if(brain_is_set){
+      if(msg_buf.type == T_PAIR_WITH_CP6){
         int i;
         for(i = 0; i < cp6_count; i++){
           if(uip_ipaddr_cmp(&cp6list[i].addr, &brain_address)){
@@ -631,7 +619,7 @@ PROCESS_THREAD(discover_process, ev, data)
         simple_udp_sendto(&client_conn, buf, 4, &addr);
         etimer_set(&discover_timeout, DISCOVERY_DUTY_CYCLE);
       }
-      else if (!brain_is_set){
+      else if (msg_buf.type == T_GET_CP6_LIST){
         buf_len = 0;
         uint32_t addr_len;
         int i;
