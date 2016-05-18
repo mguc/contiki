@@ -19,7 +19,7 @@
 /*---------------------------------------------------------------------------*/
 #define BRAIN_PORT        3100
 #define BRAIN_COAP_PORT   3901
-#define FW_MAJOR_VERSION    "23"
+#define FW_MAJOR_VERSION    "24"
 
 #define FIRST_CHANNEL 11
 #define LAST_CHANNEL 26
@@ -629,7 +629,7 @@ PROCESS_THREAD(discover_process, ev, data)
           buf_len += addr_len;
           buf[buf_len++] = '\n';
         }
-        
+
         buf[buf_len-1] = '\0';
         msg_buf.data = (unsigned char*)buf;
         msg_buf.len = buf_len;
