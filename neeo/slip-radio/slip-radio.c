@@ -267,7 +267,7 @@ PROCESS_THREAD(slip_radio_process, ev, data)
   PROCESS_BEGIN();
 
   ir_init();
-  ir_learn_init();
+  // ir_learn_init();
   init();
   NETSTACK_RDC.off(1);
 #ifdef SLIP_RADIO_CONF_SENSORS
