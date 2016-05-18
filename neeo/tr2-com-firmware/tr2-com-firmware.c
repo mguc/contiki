@@ -4,6 +4,7 @@
 #include <string.h>
 #include "dev/watchdog.h"
 #include "net/rpl/rpl.h"
+#include "net/rpl/rpl-private.h"
 #include "sys/etimer.h"
 #include "lib/ringbuf.h"
 #include "version.h"
@@ -18,7 +19,15 @@
 /*---------------------------------------------------------------------------*/
 #define BRAIN_PORT        3100
 #define BRAIN_COAP_PORT   3901
-#define FW_MAJOR_VERSION    "23"
+#define FW_MAJOR_VERSION    "24"
+
+#define FIRST_CHANNEL 11
+#define LAST_CHANNEL 26
+#define CP6_LIST_MAX 4
+#define DISCOVERY_DUTY_CYCLE CLOCK_SECOND/10
+#define OPERATING_CHANNELS 4
+const radio_value_t operating_channels[OPERATING_CHANNELS] = {11, 16, 21, 26};
+static uint8_t brain_is_set = 0;
 
 #define QUERY_STATE_URI_LEN  256
 #define QUERY_STATE_PAYLOAD_LEN  256
@@ -46,14 +55,18 @@ typedef struct query_state_s {
   uint8_t payload[QUERY_STATE_PAYLOAD_LEN];
   uint8_t data[QUERY_STATE_DATA_BUF_LEN];
 } __attribute__((packed)) query_state_t;
+
+typedef struct cp6_s {
+  uip_ipaddr_t addr;
+  uint8_t channel;
+} cp6_t;
 /*---------------------------------------------------------------------------*/
 static uip_ipaddr_t brain_address, root_address;
 static query_state_t query;
 static msg_t msg_coap_ack;
-static struct etimer et;
 static struct etimer query_timeout_timer;
-static char cp6list[256];
-static uint32_t cp6list_idx;
+static cp6_t cp6list[CP6_LIST_MAX];
+static int cp6_count;
 static struct ctimer heartbeat_timeout_ctimer;
 /*---------------------------------------------------------------------------*/
 PROCESS(query_process, "Query process");
@@ -124,6 +137,25 @@ print_addr(const uip_ipaddr_t *addr, char* buf, uint32_t* len)
   *wr_ptr = 0;
   *len = wr_ptr - buf;
 }
+
+static int get_rf_channel(void)
+{
+  radio_value_t chan;
+  NETSTACK_RADIO.get_value(RADIO_PARAM_CHANNEL, &chan);
+  return (int)chan;
+}
+
+static int set_rf_channel(radio_value_t ch)
+{
+  if(ch < FIRST_CHANNEL || ch > LAST_CHANNEL){
+    printf("Not a valid channel: %u\n", ch);
+    return -1;
+  }
+  printf("Setting new channel: %u\n", ch);
+  NETSTACK_RADIO.set_value(RADIO_PARAM_CHANNEL, ch);
+  return 0;
+}
+
 static void heartbeat_enable(void *p_data){
   heartbeat_enabled = 1;
 }
@@ -137,7 +169,6 @@ PROCESS_THREAD(query_process, ev, data)
   msg_t msg_resp;
   uint8_t resp[16];
   int ret, i;
-  static struct etimer dag_registered_timer;
 
   PROCESS_BEGIN();
   INFOT("INIT: Starting query process\n");
@@ -152,17 +183,6 @@ PROCESS_THREAD(query_process, ev, data)
   uip_ds6_init();
   uip_nd6_init();
   rpl_init();
-
-
-  while(rpl_get_any_dag() == NULL){
-	  INFOT("Waiting to join a network\n");
-	  dis_output(NULL);
-	  etimer_set(&dag_registered_timer, CLOCK_SECOND);
-	  PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&dag_registered_timer));
-  }
-
-  rpl_dag_t *rpl_current_dag = rpl_get_any_dag();
-  root_address = rpl_current_dag->dag_id;
 
   while(1) {
     PROCESS_YIELD();
@@ -358,18 +378,15 @@ PROCESS_THREAD(config_process, ev, data)
 {
   msg_t* msg_ptr;
   static msg_t msg_buf;
-  static uip_ds6_nbr_t *nbr;
   char resp_buf[40];
   char addr_buf[48];
   uint32_t addr_buf_len = 48;
   radio_value_t rssi_val = 0;
-  int ret;
-  static uint8_t brain_is_set = 0;
   static struct simple_udp_connection hearbeat_conn;
+  static struct etimer et;
 
   PROCESS_BEGIN();
   INFOT("INIT: Starting config process\n");
-  etimer_set(&et, CLOCK_SECOND);
   simple_udp_register(&hearbeat_conn,
                       3001,
                       NULL,
@@ -414,25 +431,33 @@ PROCESS_THREAD(config_process, ev, data)
       }
       else if(msg_ptr->type == T_PAIR_WITH_CP6)
       {
-    	uip_ipaddr_t tmp_address;
+        uip_ipaddr_t tmp_address;
         if(uiplib_ipaddrconv((const char *)msg_ptr->data, &tmp_address)){
-        	uip_ipaddr_copy(&brain_address, &tmp_address);
-            msg_buf.data = NULL;
-            msg_buf.len = 0;
+          uip_ipaddr_copy(&brain_address, &tmp_address);
+          msg_buf.data = NULL;
+          msg_buf.len = 0;
+          brain_is_set = 1;
         }
         else {
         	strcpy(resp_buf, "Not valid address!");
         	msg_buf.type = T_ERROR_RESPONSE;
         	msg_buf.data = (uint8_t*)resp_buf;
         	msg_buf.len = strlen(resp_buf) + 1;
+          brain_is_set = 0;
+        }
+        send_msg(&msg_buf);
+
+        if(brain_is_set){
+          rpl_dag_t *rpl_current_dag = rpl_get_any_dag();
+          if(rpl_current_dag != NULL)
+            rpl_free_instance(rpl_current_dag->instance);
+
+          etimer_set(&et, CLOCK_SECOND);
+          process_post_synch(&discover_process, PROCESS_EVENT_MSG, &msg_buf);
         }
 
         print_addr(&brain_address, addr_buf, &addr_buf_len);
         INFOT("INIT: Brain address: %s\n", addr_buf);
-        brain_is_set = 1;
-        // TODO: start pair process, open TCP/IP connection?
-
-        send_msg(&msg_buf);
       }
       else if(msg_ptr->type == T_GET_FW_VERSION)
       {
@@ -485,19 +510,23 @@ PROCESS_THREAD(config_process, ev, data)
     }
     else if(ev == PROCESS_EVENT_TIMER)
     {
-      uint32_t buf_len = 64;
-      char buf[64];
-      if(nbr_table_head(ds6_neighbors))
-        INFOT("Neighbor list:\n");
-      for(nbr = nbr_table_head(ds6_neighbors);
-          nbr != NULL;
-          nbr = nbr_table_next(ds6_neighbors, nbr)) {
-        INFO("\t\t");
-        buf_len = 64;
-        print_addr(&nbr->ipaddr, buf, &buf_len);
-        INFO("%s\n", buf);
+      rpl_dag_t *rpl_current_dag = rpl_get_any_dag();
+      if(rpl_current_dag == NULL){
+        INFOT("Waiting to join a network\n");
+        dis_output(NULL);
+        etimer_set(&et, CLOCK_SECOND);
       }
-      etimer_set(&et, CLOCK_SECOND);
+      else if(memcmp(&rpl_current_dag->dag_id, &brain_address, 8) != 0){
+        INFOT("Joined the wrong network!\n");
+        rpl_free_instance(rpl_current_dag->instance);
+        // send DIS to join new network
+        dis_output(NULL);
+        etimer_set(&et, CLOCK_SECOND);
+      }
+      else{
+        INFOT("Joined network!\n");
+        root_address = rpl_current_dag->dag_id;
+      }
     }
   }
   PROCESS_END();
@@ -519,26 +548,26 @@ void discover_callback(struct simple_udp_connection *c,
   for(i = 0; i<datalen; i++)
     INFO("%c", data[i]);
   INFO("\n");
-  //TODO: add sanity check against overflov ow cp6list buffer
-  strncpy(&cp6list[cp6list_idx], (const char*)&data[2], datalen - 3); //-3 = 'Y', ' ' ... '\0'
-  cp6list_idx += (datalen - 3);
-  cp6list[cp6list_idx++] = '\n';
+
+  if(cp6_count < CP6_LIST_MAX){
+    ++cp6_count;
+    uiplib_ipaddrconv((const char*)&data[2], &cp6list[cp6_count-1].addr); // ignore data[0]='Y', data[1]=' '
+    cp6list[cp6_count-1].channel = (uint8_t) get_rf_channel();
+  }
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(discover_process, ev, data)
 {
   static struct simple_udp_connection client_conn;
-  static uip_ds6_nbr_t *nbr;
+  static uip_ipaddr_t addr;
   static msg_t msg_buf;
   static struct etimer discover_timeout;
   msg_t* msg_ptr;
   char buf[128];
-  uint32_t buf_len = 128;
-
+  uint32_t buf_len = 0;
+  static int current_channel_index = 0;
+  static uint8_t brain_found = 0;
   PROCESS_BEGIN();
-  // init etimer
-  etimer_set(&discover_timeout, CLOCK_SECOND);
-  etimer_stop(&discover_timeout);
 
   simple_udp_register(&client_conn,
                       3000,
@@ -550,30 +579,63 @@ PROCESS_THREAD(discover_process, ev, data)
     PROCESS_YIELD();
     if(ev == PROCESS_EVENT_MSG)
     {
-      cp6list_idx = 0;
       etimer_stop(&discover_timeout);
-
-      msg_ptr = (msg_t*)data;
-      msg_buf.type = msg_ptr->type;
-      msg_buf.id = msg_ptr->id;
-
-      for(nbr = nbr_table_head(ds6_neighbors);
-          nbr != NULL;
-          nbr = nbr_table_next(ds6_neighbors, nbr)) {
-
-        print_addr(&nbr->ipaddr, buf, &buf_len);
-        INFOT("DISCOVER: sending whois to: %s\n", buf);
-        memcpy(buf, "NBR?", 4);
-        sicslowpan_set_max_mac_transmissions(IMPORTANT_MESSAGE_MAX_MAC_TRANSMISSIONS);
-        simple_udp_sendto(&client_conn, buf, 4, &nbr->ipaddr);
-        sicslowpan_reset_max_mac_transmissions();
+      cp6_count = 0;
+      current_channel_index = 0;
+      brain_found = 0;
+      if(data != NULL){
+        msg_ptr = (msg_t*)data;
+        msg_buf.type = msg_ptr->type;
+        msg_buf.id = msg_ptr->id;
       }
-      etimer_set(&discover_timeout, 3 * CLOCK_SECOND);
+
+      set_rf_channel(operating_channels[current_channel_index]);
+      uip_create_linklocal_allnodes_mcast(&addr);
+      print_addr(&addr, buf, &buf_len);
+      INFOT("DISCOVER: sending whois to %s on channel %d\n", buf, operating_channels[current_channel_index]);
+      memcpy(buf, "NBR?", 4);
+      simple_udp_sendto(&client_conn, buf, 4, &addr);
+
+      etimer_set(&discover_timeout, DISCOVERY_DUTY_CYCLE);
     } else if(ev == PROCESS_EVENT_TIMER) {
-      cp6list[cp6list_idx-1] = '\0';
-      msg_buf.data = (unsigned char*)cp6list;
-      msg_buf.len = cp6list_idx;
-      send_msg(&msg_buf);
+      ++current_channel_index;
+      if(msg_buf.type == T_PAIR_WITH_CP6){
+        int i;
+        for(i = 0; i < cp6_count; i++){
+          if(uip_ipaddr_cmp(&cp6list[i].addr, &brain_address)){
+            set_rf_channel(cp6list[i].channel);
+            brain_found = 1;
+            break;
+          }
+        }
+      }
+
+      if(current_channel_index < OPERATING_CHANNELS && brain_found == 0){
+        set_rf_channel(operating_channels[current_channel_index]);
+        uip_create_linklocal_allnodes_mcast(&addr);
+        print_addr(&addr, buf, &buf_len);
+        INFOT("DISCOVER: sending whois to %s on channel %d\n", buf, operating_channels[current_channel_index]);
+        memcpy(buf, "NBR?", 4);
+        simple_udp_sendto(&client_conn, buf, 4, &addr);
+        etimer_set(&discover_timeout, DISCOVERY_DUTY_CYCLE);
+      }
+      else if (msg_buf.type == T_GET_CP6_LIST){
+        buf_len = 0;
+        uint32_t addr_len;
+        int i;
+        for(i = 0; i < cp6_count; i++){
+          addr_len = 0;
+          print_addr(&cp6list[i].addr, buf+buf_len, &addr_len);
+          buf_len += addr_len;
+          buf[buf_len++] = '\n';
+        }
+
+        buf[buf_len-1] = '\0';
+        msg_buf.data = (unsigned char*)buf;
+        msg_buf.len = buf_len;
+        send_msg(&msg_buf);
+      }
+
     }
   }
   PROCESS_END();

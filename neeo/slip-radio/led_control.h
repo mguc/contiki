@@ -10,5 +10,6 @@
 
 void led_init();
 void led_blink(uint8_t mode);
+void led_stop_polling();
 
 #endif

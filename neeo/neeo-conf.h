@@ -68,7 +68,7 @@
 #define IEEE802154_CONF_PANID 0xabcd
 
 #undef   MICROMAC_CONF_CHANNEL
-#define  MICROMAC_CONF_CHANNEL  14
+#define  MICROMAC_CONF_CHANNEL  11
 
 #if CONTIKI_TARGET_EXP5438
 /* Let's keep the default settings, to preserve some memory for simulations */

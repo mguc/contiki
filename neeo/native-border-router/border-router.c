@@ -286,7 +286,9 @@ void discover_callback(struct simple_udp_connection *c,
     buf_len -= 2;
     print_addr(&tun_address, buf+2, &buf_len);
     c->remote_port = source_port;
-    simple_udp_sendto(c, buf, buf_len+2, source_addr);
+    uip_ipaddr_t addr;
+    uip_create_linklocal_allnodes_mcast(&addr);
+    simple_udp_sendto(c, buf, buf_len+2, &addr);
   }
   else if(data[0] == '?' && datalen == 1)
   {

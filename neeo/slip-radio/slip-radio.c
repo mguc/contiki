@@ -51,6 +51,7 @@
 #include "ir_control.h"
 #include "ir-learn.h"
 #include "common-defs.h"
+#include "channel_control.h"
 
 #define FW_MAJOR_VERSION    "1"
 
@@ -185,6 +186,8 @@ slip_radio_cmd_handler(const uint8_t *data, int len)
   } else if(uip_buf[0] == '?') {
     PRINTF("Got request message of type %c\n", uip_buf[1]);
     if(data[1] == 'M') {
+      // stop polling led control pin
+      led_stop_polling();
       /* this is just a test so far... just to see if it works */
       uip_buf[0] = '!';
       uip_buf[1] = 'M';
@@ -256,7 +259,7 @@ putchar(int c)
 #endif
 /*---------------------------------------------------------------------------*/
 PROCESS(slip_radio_process, "Slip radio process");
-AUTOSTART_PROCESSES(&slip_radio_process, &ir_control_process, &ir_learn_process);
+AUTOSTART_PROCESSES(&slip_radio_process, &ir_control_process, &ir_learn_process, &channel_control);
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(slip_radio_process, ev, data)
 {
@@ -264,7 +267,7 @@ PROCESS_THREAD(slip_radio_process, ev, data)
   PROCESS_BEGIN();
 
   ir_init();
-  ir_learn_init();
+  // ir_learn_init();
   init();
   NETSTACK_RDC.off(1);
 #ifdef SLIP_RADIO_CONF_SENSORS
@@ -274,7 +277,6 @@ PROCESS_THREAD(slip_radio_process, ev, data)
 
   etimer_set(&et, CLOCK_SECOND * 3);
   led_init();
-  led_blink(LED_MODE_BLINK_500);
 
   while(1) {
     PROCESS_YIELD();
