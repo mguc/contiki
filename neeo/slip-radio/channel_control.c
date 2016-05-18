@@ -3,7 +3,7 @@
 #include "radio.h"
 #include "dev/watchdog.h"
 
-#define DEBUG DEBUG_FULL
+#define DEBUG DEBUG_NONE
 #include "net/ip/uip-debug.h"
 
 #define OPERATING_CHANNELS 4
@@ -107,7 +107,7 @@ PROCESS_THREAD(channel_control, ev, data)
   channels_init(channels, OPERATING_CHANNELS);
   channels_state_print(channels, OPERATING_CHANNELS);
   current_channel_index = channels_get_best(channels, OPERATING_CHANNELS);
-  PRINTF("Best channel: %d\n", channels[current_channel_index].number);
+  printf("Best channel: %d\n", channels[current_channel_index].number);
   initial_noise_average = channels[current_channel_index].quality.noisefloor_average;
   set_rf_channel(channels[current_channel_index].number);
 
