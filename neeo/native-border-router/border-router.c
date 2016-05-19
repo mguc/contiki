@@ -61,6 +61,9 @@
 #define DEBUG DEBUG_FULL
 #include "net/ip/uip-debug.h"
 
+#define DISCOVERY_STRING  "NBR?"
+#define HEARTBEAT_STRING  "HEARTBEAT"
+
 extern long slip_sent;
 extern long slip_received;
 extern int contiki_argc;
@@ -269,6 +272,7 @@ void discover_callback(struct simple_udp_connection *c,
                        const uip_ipaddr_t *dest_addr, uint16_t dest_port,
                        const uint8_t *data, uint16_t datalen)
 {
+  uint8_t unknown_request = 0;
   uint32_t buf_len = 48;
   char buf[48];
 
@@ -277,30 +281,40 @@ void discover_callback(struct simple_udp_connection *c,
 
   print_addr(source_addr, buf, &buf_len);
 
-  if(strcmp((char*)data, "NBR?") == 0 && datalen == 4)
+  if(datalen == strlen(DISCOVERY_STRING))
   {
-    log_msg(LOG_INFO, "dicovery from: %s ", buf);
-    log_msg(LOG_TRACE, "I'm NBR!\n");
-    buf_len = 48;
-    memcpy(buf, "Y ", 2);
-    buf_len -= 2;
-    print_addr(&tun_address, buf+2, &buf_len);
-    c->remote_port = source_port;
-    uip_ipaddr_t addr;
-    uip_create_linklocal_allnodes_mcast(&addr);
-    simple_udp_sendto(c, buf, buf_len+2, &addr);
+    if(memcmp(DISCOVERY_STRING, data, datalen) == 0)
+    {
+      log_msg(LOG_INFO, "dicovery from: %s ", buf);
+      log_msg(LOG_TRACE, "I'm NBR!\n");
+      buf_len = 48;
+      memcpy(buf, "Y ", 2);
+      buf_len -= 2;
+      print_addr(&tun_address, buf+2, &buf_len);
+      c->remote_port = source_port;
+      uip_ipaddr_t addr;
+      uip_create_linklocal_allnodes_mcast(&addr);
+      simple_udp_sendto(c, buf, buf_len+2, &addr);
+    }
+    else
+      unknown_request = 1;
   }
-  else if(data[0] == '?' && datalen == 1)
+  else if(datalen == strlen(HEARTBEAT_STRING))
   {
-    if(slip_config_get_verbose() >= 2)
-      log_msg(LOG_INFO, "heartbeat from: %s ", buf);
-    buf[0] = 'Y';
-    c->remote_port = source_port;
-    simple_udp_sendto(c, buf, 1, source_addr);
+    if(memcmp(HEARTBEAT_STRING, data, datalen) == 0){
+      if(slip_config_get_verbose() >= 2)
+        log_msg(LOG_INFO, "heartbeat from: %s ", buf);
+      strcpy(buf, HEARTBEAT_STRING);
+      c->remote_port = source_port;
+      simple_udp_sendto(c, buf, strlen(HEARTBEAT_STRING), source_addr);
+    }
+    else
+      unknown_request = 1;
   }
-  else {
+  else
+    unknown_request = 1;
+  if(unknown_request)
     log_msg(LOG_INFO, "received unknown request with length %u: %s", datalen, data);
-  }
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(discover_process, ev, data)

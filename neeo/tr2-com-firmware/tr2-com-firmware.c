@@ -14,7 +14,7 @@
 #include "er-coap-engine.h"
 #include "rest_server.h"
 
-#define DEBUG_LEVEL DEBUG_NONE
+#define DEBUG_LEVEL DEBUG_ALL
 #include "log_helper.h"
 /*---------------------------------------------------------------------------*/
 #define BRAIN_PORT        3100
@@ -36,6 +36,9 @@ static uint8_t brain_is_set = 0;
 #define IMPORTANT_MESSAGE_MAX_MAC_TRANSMISSIONS 3
 #define NORMAL_MESSAGE_MAX_MAC_TRANSMISSIONS 1
 
+#define DISCOVERY_STRING "NBR?"
+
+#define HEARTBEAT_STRING "HEARTBEAT"
 #define HEARTBEAT_TIMEOUT CLOCK_SECOND/10
 #define HEARTBEAT_STEP 20
 #define HEARTBEAT_SUCCESS_WEIGHT 2
@@ -54,7 +57,7 @@ typedef struct query_state_s {
   uint8_t uri[QUERY_STATE_URI_LEN];
   uint8_t payload[QUERY_STATE_PAYLOAD_LEN];
   uint8_t data[QUERY_STATE_DATA_BUF_LEN];
-} __attribute__((packed)) query_state_t;
+} query_state_t;
 
 typedef struct cp6_s {
   uip_ipaddr_t addr;
@@ -168,7 +171,6 @@ PROCESS_THREAD(query_process, ev, data)
   msg_t* msg;
   msg_t msg_resp;
   uint8_t resp[16];
-  int ret, i;
 
   PROCESS_BEGIN();
   INFOT("INIT: Starting query process\n");
@@ -346,6 +348,7 @@ static void heartbeat_send_msg(uint8_t id){
       response = 1;
     else
       response = 0;
+    INFOT("T_HEARTBEAT: %d\n", response);
     heartbeat_msg.id = id;
     heartbeat_msg.type = T_HEARTBEAT;
     heartbeat_msg.len = 1;
@@ -361,10 +364,16 @@ static void heartbeat_callback(struct simple_udp_connection *c,
                        uint16_t dest_port,
                        const uint8_t *data, uint16_t datalen){
   ctimer_stop(&heartbeat_timeout_ctimer);
-  heartbeat_success_rate += HEARTBEAT_SUCCESS_WEIGHT*HEARTBEAT_STEP;
-  if(heartbeat_success_rate > 100)
-    heartbeat_success_rate = 100;
-  heartbeat_send_msg(heartbeat_msg_id);
+  if(datalen == strlen(HEARTBEAT_STRING)){
+    if(memcmp(HEARTBEAT_STRING, data, datalen) == 0)
+      heartbeat_success_rate += HEARTBEAT_SUCCESS_WEIGHT*HEARTBEAT_STEP;
+    else
+      heartbeat_success_rate -= HEARTBEAT_FAILURE_WEIGHT*HEARTBEAT_STEP;
+      
+    if(heartbeat_success_rate > 100)
+      heartbeat_success_rate = 100;
+    heartbeat_send_msg(heartbeat_msg_id);
+  }
 }
 
 static void heartbeat_timeout_callback(void *p_data){
@@ -491,9 +500,10 @@ PROCESS_THREAD(config_process, ev, data)
         if(brain_is_set && rpl_get_any_dag()){
           if(heartbeat_enabled){
             heartbeat_msg_id = msg_buf.id;
-            uint8_t heartbeat_buf = '?';
+            char heartbeat_buf[64];
+            strcpy(heartbeat_buf, HEARTBEAT_STRING);
             sicslowpan_set_max_mac_transmissions(NORMAL_MESSAGE_MAX_MAC_TRANSMISSIONS);
-            simple_udp_sendto(&hearbeat_conn, &heartbeat_buf, 1, &root_address);
+            simple_udp_sendto(&hearbeat_conn, heartbeat_buf, strlen(HEARTBEAT_STRING), &root_address);
             sicslowpan_reset_max_mac_transmissions();
             ctimer_set(&heartbeat_timeout_ctimer, HEARTBEAT_TIMEOUT, heartbeat_timeout_callback, NULL);
           }
@@ -501,6 +511,7 @@ PROCESS_THREAD(config_process, ev, data)
             heartbeat_send_msg(msg_buf.id);
         }
         else {
+          INFOT("T_HEARTBEAT: not connected\n");
           resp_buf[0] = 0;
           msg_buf.data = (uint8_t*)resp_buf;
           msg_buf.len = 1;
@@ -593,8 +604,8 @@ PROCESS_THREAD(discover_process, ev, data)
       uip_create_linklocal_allnodes_mcast(&addr);
       print_addr(&addr, buf, &buf_len);
       INFOT("DISCOVER: sending whois to %s on channel %d\n", buf, operating_channels[current_channel_index]);
-      memcpy(buf, "NBR?", 4);
-      simple_udp_sendto(&client_conn, buf, 4, &addr);
+      memcpy(buf, DISCOVERY_STRING, strlen(DISCOVERY_STRING));
+      simple_udp_sendto(&client_conn, buf, strlen(DISCOVERY_STRING), &addr);
 
       etimer_set(&discover_timeout, DISCOVERY_DUTY_CYCLE);
     } else if(ev == PROCESS_EVENT_TIMER) {
@@ -615,8 +626,8 @@ PROCESS_THREAD(discover_process, ev, data)
         uip_create_linklocal_allnodes_mcast(&addr);
         print_addr(&addr, buf, &buf_len);
         INFOT("DISCOVER: sending whois to %s on channel %d\n", buf, operating_channels[current_channel_index]);
-        memcpy(buf, "NBR?", 4);
-        simple_udp_sendto(&client_conn, buf, 4, &addr);
+        memcpy(buf, DISCOVERY_STRING, strlen(DISCOVERY_STRING));
+        simple_udp_sendto(&client_conn, buf, strlen(DISCOVERY_STRING), &addr);
         etimer_set(&discover_timeout, DISCOVERY_DUTY_CYCLE);
       }
       else if (msg_buf.type == T_GET_CP6_LIST){
