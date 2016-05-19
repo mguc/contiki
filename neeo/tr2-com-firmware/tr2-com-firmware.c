@@ -14,7 +14,7 @@
 #include "er-coap-engine.h"
 #include "rest_server.h"
 
-#define DEBUG_LEVEL DEBUG_ALL
+#define DEBUG_LEVEL DEBUG_NONE
 #include "log_helper.h"
 /*---------------------------------------------------------------------------*/
 #define BRAIN_PORT        3100
