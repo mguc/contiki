@@ -40,11 +40,11 @@ static uint8_t brain_is_set = 0;
 
 #define HEARTBEAT_STRING "HEARTBEAT"
 #define HEARTBEAT_TIMEOUT CLOCK_SECOND/10
-#define HEARTBEAT_STEP 20
-#define HEARTBEAT_SUCCESS_WEIGHT 2
+#define HEARTBEAT_STEP 30
+#define HEARTBEAT_SUCCESS_WEIGHT 1
 #define HEARTBEAT_FAILURE_WEIGHT 1
 #define HEARTBEAT_DISABLE_TIME CLOCK_SECOND
-static int32_t heartbeat_success_rate = 100;
+static int32_t heartbeat_success_rate = 50;
 static uint8_t heartbeat_enabled = 1;
 static uint8_t heartbeat_msg_id = 0;
 static uint8_t heartbeat_response_sent = 0;
@@ -367,8 +367,6 @@ static void heartbeat_callback(struct simple_udp_connection *c,
   if(datalen == strlen(HEARTBEAT_STRING)){
     if(memcmp(HEARTBEAT_STRING, data, datalen) == 0)
       heartbeat_success_rate += HEARTBEAT_SUCCESS_WEIGHT*HEARTBEAT_STEP;
-    else
-      heartbeat_success_rate -= HEARTBEAT_FAILURE_WEIGHT*HEARTBEAT_STEP;
       
     if(heartbeat_success_rate > 100)
       heartbeat_success_rate = 100;
