@@ -10,7 +10,7 @@
 const radio_value_t operating_channels[OPERATING_CHANNELS] = {11, 16, 21, 26};
 static channel_t channels[OPERATING_CHANNELS];
 
-#define RSSI_WAIT_TIME RTIMER_SECOND / 20
+#define RSSI_WAIT_TIME (RTIMER_SECOND / 20)
 #define NOISE_MAX_SHIFT 10
 
 int get_rf_channel(void)
@@ -63,7 +63,7 @@ void channels_init(channel_t *p_channels, uint32_t number_of_channels){
       rtimer_clock_t wt;
       wt = RTIMER_NOW();
       watchdog_periodic();
-      while(RTIMER_CLOCK_LT(RTIMER_NOW(), wt + RTIMER_SECOND/20)) {
+      while(RTIMER_CLOCK_LT(RTIMER_NOW(), wt + RSSI_WAIT_TIME)) {
   #if CONTIKI_TARGET_COOJA
         simProcessRunValue = 1;
         cooja_mt_yield();
@@ -98,7 +98,7 @@ static int channels_get_best(channel_t *p_channels, uint32_t number_of_channels)
 PROCESS(channel_control, "Channel control process");
 PROCESS_THREAD(channel_control, ev, data)
 {
-  static struct etimer et;
+  // static struct etimer et;
   static int current_channel_index = 0;
   static int initial_noise_average = 0;
 
@@ -111,26 +111,26 @@ PROCESS_THREAD(channel_control, ev, data)
   initial_noise_average = channels[current_channel_index].quality.noisefloor_average;
   set_rf_channel(channels[current_channel_index].number);
 
-  etimer_set(&et, CLOCK_SECOND);
-  while(1) {
-
-    PROCESS_YIELD();
-
-    switch(ev){
-      case PROCESS_EVENT_MSG:
-        break;
-      case PROCESS_EVENT_TIMER:
-        channel_noise_update(&channels[current_channel_index]);
-        if(initial_noise_average + NOISE_MAX_SHIFT < channels[current_channel_index].quality.noisefloor_average)
-          PRINTF("There might be a better channel! Noise: %d\n", \
-            channels[current_channel_index].quality.noisefloor_average);
-        etimer_set(&et, CLOCK_SECOND);
-        break;
-      default:
-        break;
-    }
-
-  }
+  // etimer_set(&et, CLOCK_SECOND);
+  // while(1) {
+  // 
+  //   PROCESS_YIELD();
+  // 
+  //   switch(ev){
+  //     case PROCESS_EVENT_MSG:
+  //       break;
+  //     case PROCESS_EVENT_TIMER:
+  //       channel_noise_update(&channels[current_channel_index]);
+  //       if(initial_noise_average + NOISE_MAX_SHIFT < channels[current_channel_index].quality.noisefloor_average)
+  //         PRINTF("There might be a better channel! Noise: %d\n", \
+  //           channels[current_channel_index].quality.noisefloor_average);
+  //       etimer_set(&et, CLOCK_SECOND);
+  //       break;
+  //     default:
+  //       break;
+  //   }
+  // 
+  // }
 
   PROCESS_END();
 }
