@@ -19,7 +19,7 @@
 /*---------------------------------------------------------------------------*/
 #define BRAIN_PORT        3100
 #define BRAIN_COAP_PORT   3901
-#define FW_MAJOR_VERSION    "24"
+#define FW_MAJOR_VERSION    "25"
 
 #define FIRST_CHANNEL 11
 #define LAST_CHANNEL 26
@@ -385,7 +385,7 @@ static void heartbeat_callback(struct simple_udp_connection *c,
       else
         ++heartbeat_count;
     }
-      
+
     heartbeat_send_msg(heartbeat_msg_id);
   }
 }
