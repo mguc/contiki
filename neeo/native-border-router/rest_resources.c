@@ -27,6 +27,7 @@ RESOURCE(sendir, METHOD_POST | METHOD_GET, "sendir");
 RESOURCE(stopir, METHOD_POST, "stopir");
 RESOURCE(discovery, METHOD_POST, "discovery");
 RESOURCE(learnir, METHOD_POST | METHOD_GET, "learnir");
+RESOURCE(channel, METHOD_POST | METHOD_GET, "channel");
 /*---------------------------------------------------------------------------*/
 void
 send_stopir(void)
@@ -418,6 +419,42 @@ discovery_handler(REQUEST* request, RESPONSE* response)
 
   rest_set_response_status(response, OK_200);
 }
+
+void channel_handler(REQUEST* request, RESPONSE* response){
+  int success = 1;
+  if(request->request_type == HTTP_METHOD_GET) {
+    char req_buf[] = "?C";
+    write_to_slip((const uint8_t *)req_buf, strlen(req_buf));
+    rest_set_response_status(response, OK_200);
+    return;
+  }
+  else if(request->request_type == HTTP_METHOD_POST){
+    char channel[16];
+    if(rest_get_post_variable(request, "value", channel, 16)){
+      int ch = atoi(channel);
+      if(ch < 11 || ch > 26){
+        printf("not a valid channel: %d\n", ch);
+        success = 0;
+      }
+      else {
+        printf("setting new channel: %d\n", ch);
+        uint8_t buf[3];
+        buf[0] = '!';
+        buf[1] = 'C';
+        buf[2] = (uint8_t) ch;
+        write_to_slip(buf, 3);
+      }
+    }
+    else {
+      printf("could not get post variable value");
+      success = 0;
+    }
+  }
+  if(!success)
+    rest_set_response_status(response, BAD_REQUEST_400);
+
+}
+
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(rest_server_process, ev, data)
 {
@@ -430,6 +467,7 @@ PROCESS_THREAD(rest_server_process, ev, data)
   rest_activate_resource(&resource_stopir);
   rest_activate_resource(&resource_learnir);
   rest_activate_resource(&resource_discovery);
+  rest_activate_resource(&resource_channel);
   sendir_state.state = COMMAND_STATE_IDLE;
   sendir_state.result = -1;
   learnir_state.state = COMMAND_STATE_IDLE;

@@ -183,6 +183,11 @@ slip_radio_cmd_handler(const uint8_t *data, int len)
       }
       return 1;
     }
+    else if(data[1] == 'C') {
+      if(len > 2)
+        set_rf_channel((radio_value_t)data[2]);
+      return 1;
+    }
   } else if(uip_buf[0] == '?') {
     PRINTF("Got request message of type %c\n", uip_buf[1]);
     if(data[1] == 'M') {
@@ -196,6 +201,15 @@ slip_radio_cmd_handler(const uint8_t *data, int len)
       }
       uip_len = 10;
       cmd_send(uip_buf, uip_len);
+      return 1;
+    }
+    else if(data[1] == 'C'){
+      int ch = get_rf_channel();
+      uint8_t cmd[3];
+      cmd[0] = '!';
+      cmd[1] = 'C';
+      cmd[2] = (uint8_t) ch;
+      cmd_send(cmd, 3);
       return 1;
     }
   }
