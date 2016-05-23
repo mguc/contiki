@@ -38,13 +38,17 @@ static uint8_t brain_is_set = 0;
 
 #define DISCOVERY_STRING "NBR?"
 
-#define HEARTBEAT_STRING "HEARTBEAT"
+typedef enum heartbeat_state_e {
+  HEARTBEAT_GOOD,
+  HEARTBEAT_BAD
+} heartbeat_state_t;
+#define HEARTBEAT_STRING "********************************"
 #define HEARTBEAT_TIMEOUT CLOCK_SECOND/10
-#define HEARTBEAT_STEP 30
-#define HEARTBEAT_SUCCESS_WEIGHT 1
-#define HEARTBEAT_FAILURE_WEIGHT 1
+#define HEARTBEAT_GOOD_COUNT 3
+#define HEARTBEAT_BAD_COUNT 2
 #define HEARTBEAT_DISABLE_TIME CLOCK_SECOND
-static int32_t heartbeat_success_rate = 50;
+static heartbeat_state_t heartbeat_state = HEARTBEAT_BAD;
+static int heartbeat_count = HEARTBEAT_BAD_COUNT;
 static uint8_t heartbeat_enabled = 1;
 static uint8_t heartbeat_msg_id = 0;
 static uint8_t heartbeat_response_sent = 0;
@@ -63,6 +67,7 @@ typedef struct cp6_s {
   uip_ipaddr_t addr;
   uint8_t channel;
 } cp6_t;
+
 /*---------------------------------------------------------------------------*/
 static uip_ipaddr_t brain_address, root_address;
 static query_state_t query;
@@ -344,7 +349,16 @@ static void heartbeat_send_msg(uint8_t id){
     heartbeat_response_sent = 1;
     msg_t heartbeat_msg;
     uint8_t response;
-    if(heartbeat_success_rate >= 50)
+    if(heartbeat_state == HEARTBEAT_GOOD && heartbeat_count <= 0){
+      heartbeat_state = HEARTBEAT_BAD;
+      heartbeat_count = 0;
+    }
+    else if(heartbeat_state == HEARTBEAT_BAD && heartbeat_count >= HEARTBEAT_GOOD_COUNT){
+      heartbeat_state = HEARTBEAT_GOOD;
+      heartbeat_count = HEARTBEAT_BAD_COUNT;
+    }
+
+    if(heartbeat_state == HEARTBEAT_GOOD)
       response = 1;
     else
       response = 0;
@@ -363,21 +377,24 @@ static void heartbeat_callback(struct simple_udp_connection *c,
                        const uip_ipaddr_t *dest_addr,
                        uint16_t dest_port,
                        const uint8_t *data, uint16_t datalen){
-  ctimer_stop(&heartbeat_timeout_ctimer);
   if(datalen == strlen(HEARTBEAT_STRING)){
-    if(memcmp(HEARTBEAT_STRING, data, datalen) == 0)
-      heartbeat_success_rate += HEARTBEAT_SUCCESS_WEIGHT*HEARTBEAT_STEP;
+    if(memcmp(HEARTBEAT_STRING, data, datalen) == 0){
+      ctimer_stop(&heartbeat_timeout_ctimer);
+      if(heartbeat_state == HEARTBEAT_GOOD)
+        heartbeat_count = HEARTBEAT_BAD_COUNT;
+      else
+        ++heartbeat_count;
+    }
       
-    if(heartbeat_success_rate > 100)
-      heartbeat_success_rate = 100;
     heartbeat_send_msg(heartbeat_msg_id);
   }
 }
 
 static void heartbeat_timeout_callback(void *p_data){
-  heartbeat_success_rate -= HEARTBEAT_FAILURE_WEIGHT*HEARTBEAT_STEP;
-  if(heartbeat_success_rate < 0)
-    heartbeat_success_rate = 0;
+  if(heartbeat_state == HEARTBEAT_GOOD)
+    --heartbeat_count;
+  else
+    heartbeat_count = 0;
   heartbeat_send_msg(heartbeat_msg_id);
 }
 

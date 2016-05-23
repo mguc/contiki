@@ -62,7 +62,7 @@
 #include "net/ip/uip-debug.h"
 
 #define DISCOVERY_STRING  "NBR?"
-#define HEARTBEAT_STRING  "HEARTBEAT"
+#define HEARTBEAT_STRING  "********************************"
 
 extern long slip_sent;
 extern long slip_received;
