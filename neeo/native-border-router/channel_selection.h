@@ -1,5 +1,5 @@
-#ifndef WIFI_CHANNEL_LUT_H
-#define WIFI_CHANNEL_LUT_H
+#ifndef CHANNEL_SELECTION_H
+#define CHANNEL_SELECTION_H
 
 typedef struct channel_s {
   unsigned int id;
@@ -14,4 +14,4 @@ typedef struct channel_s {
 extern const channel_t wifi_channels[];
 int get_clear_sixlowpan_channels(unsigned int wifi_frequency, unsigned char *channel_buffer, unsigned int max_size);
 
-#endif /* WIFI_CHANNEL_LUT_H */
+#endif /* CHANNEL_SELECTION_H */
