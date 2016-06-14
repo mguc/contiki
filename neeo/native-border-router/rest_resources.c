@@ -4,6 +4,7 @@
 #include "border-router.h"
 #include "rest_resources.h"
 #include "log_helper.h"
+#include "channel_selection.h"
 
 #define DEBUG DEBUG_FULL
 #include "net/ip/uip-debug.h"
@@ -429,9 +430,9 @@ void channel_handler(REQUEST* request, RESPONSE* response){
     return;
   }
   else if(request->request_type == HTTP_METHOD_POST){
-    char channel[16];
-    if(rest_get_post_variable(request, "value", channel, 16)){
-      int ch = atoi(channel);
+    char post_buf[16] = {0};
+    if(rest_get_post_variable(request, "value", post_buf, 16)){
+      int ch = atoi(post_buf);
       if(ch < 11 || ch > 26){
         printf("not a valid channel: %d\n", ch);
         success = 0;
@@ -443,6 +444,22 @@ void channel_handler(REQUEST* request, RESPONSE* response){
         buf[1] = 'C';
         buf[2] = (uint8_t) ch;
         write_to_slip(buf, 3);
+      }
+    }
+    else if(rest_get_post_variable(request, "wifi", post_buf, 16)){
+      int buf_size = 0;
+      int wifi_ch = atoi(post_buf);
+      uint8_t buf[SIXLOWPAN_CHANNELS+2];
+      buf[0] = '!';
+      buf[1] = 'W';
+      buf_size = get_clear_sixlowpan_channels(wifi_ch, buf+2, SIXLOWPAN_CHANNELS);
+      if(buf_size < 0){
+        printf("Could not get clear sixlowpan channels, error code: %d\n", buf_size);
+        success = 0;
+      }
+      else {
+        buf_size += 2;
+        write_to_slip(buf, buf_size);
       }
     }
     else {
