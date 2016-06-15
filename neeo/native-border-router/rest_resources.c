@@ -439,20 +439,20 @@ void channel_handler(REQUEST* request, RESPONSE* response){
       }
       else {
         printf("setting new channel: %d\n", ch);
-        uint8_t buf[3];
+        uint8_t buf[3] = {0};
         buf[0] = '!';
         buf[1] = 'C';
         buf[2] = (uint8_t) ch;
         write_to_slip(buf, 3);
       }
     }
-    else if(rest_get_post_variable(request, "wifi", post_buf, 16)){
+    else if(rest_get_post_variable(request, "wififrequency", post_buf, 16)){
       int buf_size = 0;
       int wifi_ch = atoi(post_buf);
-      uint8_t buf[SIXLOWPAN_CHANNELS+2];
+      uint8_t buf[SIXLOWPAN_CHANNELS+2] = {0};
       buf[0] = '!';
       buf[1] = 'W';
-      buf_size = get_clear_sixlowpan_channels(wifi_ch, buf+2, SIXLOWPAN_CHANNELS);
+      buf_size = get_clear_sixlowpan_channels(wifi_ch, NO_REGION, buf+2, SIXLOWPAN_CHANNELS);
       if(buf_size < 0){
         printf("Could not get clear sixlowpan channels, error code: %d\n", buf_size);
         success = 0;

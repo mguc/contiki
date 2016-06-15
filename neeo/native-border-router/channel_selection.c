@@ -37,7 +37,44 @@ const channel_t sixlowpan_channels[SIXLOWPAN_CHANNELS] = {
   {26, 2479, 2480, 2481}
 };
 
-int get_clear_sixlowpan_channels(unsigned int wifi_frequency, unsigned char *channel_buffer, unsigned int max_size){
+#define US_PREFERRED_CHANNELS 3
+const unsigned int us_preferred_channels[US_PREFERRED_CHANNELS] = { 15, 20, 25 };
+
+#define EU_PREFERRED_CHANNELS 4
+const unsigned int eu_preferred_channels[EU_PREFERRED_CHANNELS] = { 15, 16, 21, 22};
+
+#define AU_PREFERRED_CHANNELS 3
+const unsigned int au_preferred_channels[US_PREFERRED_CHANNELS] = { 15, 20, 25 };
+
+static int is_channel_preferred(wifi_region_t wifi_region, unsigned int channel_id){
+  int i, region_channels;
+  const unsigned int *preferred_channels;
+  switch (wifi_region) {
+    case US:
+      region_channels = US_PREFERRED_CHANNELS;
+      preferred_channels = us_preferred_channels;
+      break;
+    case EU:
+      region_channels = EU_PREFERRED_CHANNELS;
+      preferred_channels = eu_preferred_channels;
+      break;
+    case AU:
+      region_channels = AU_PREFERRED_CHANNELS;
+      preferred_channels = au_preferred_channels;
+      break;
+    default:
+      // skip region check
+      return 1;
+  }
+  for(i = 0; i < region_channels; i++){
+    if(preferred_channels[i] == channel_id)
+      return 1;
+  }
+  return 0;
+}
+
+int get_clear_sixlowpan_channels(unsigned int wifi_frequency, wifi_region_t wifi_region, \
+  unsigned char *channel_buffer, unsigned int max_size){
   int i,j, size = 0;
   /* Find the wifi channel in the LUT */
   for(i = 0; i < WIFI_CHANNELS; i++){
@@ -51,12 +88,15 @@ int get_clear_sixlowpan_channels(unsigned int wifi_frequency, unsigned char *cha
   /* Exclude channel 26 because tx power is reduced on this channel */
   for(j = 0; j < SIXLOWPAN_CHANNELS - 1; j++){
     if(sixlowpan_channels[j].lower_freq > wifi_channels[i].upper_freq || \
-      sixlowpan_channels[j].upper_freq < wifi_channels[i].lower_freq){  
-        if(size < max_size)
-          channel_buffer[size++] = (unsigned char) sixlowpan_channels[j].id;
-        else {
-          printf("Warning: Buffer full, returning %d valid channels.\n", size);
-          break;
+      sixlowpan_channels[j].upper_freq < wifi_channels[i].lower_freq){
+        // filter preferred channels in a certain region
+        if(is_channel_preferred(wifi_region, sixlowpan_channels[j].id)){
+          if(size < max_size)
+            channel_buffer[size++] = (unsigned char) sixlowpan_channels[j].id;
+          else {
+            printf("Warning: Buffer full, returning %d valid channels.\n", size);
+            break;
+          }
         }
       }
   }
