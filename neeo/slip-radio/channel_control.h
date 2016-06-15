@@ -33,6 +33,11 @@ typedef struct channel_s {
   channel_quality_t quality;
 } channel_t;
 
+typedef struct channel_control_msg_s {
+  uint8_t data[16];
+  uint32_t len;
+} channel_control_msg_t;
+
 int get_rf_channel(void);
 int set_rf_channel(radio_value_t ch);
 
