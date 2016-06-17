@@ -64,6 +64,7 @@ extern const struct slip_radio_sensors SLIP_RADIO_CONF_SENSORS;
 
 void slip_send_packet(const uint8_t *ptr, int len);
 
+static channel_control_msg_t channel_msg;
  /* max 16 packets at the same time??? */
 uint8_t packet_ids[16];
 int packet_pos;
@@ -187,6 +188,18 @@ slip_radio_cmd_handler(const uint8_t *data, int len)
       if(len > 2)
         set_rf_channel((radio_value_t)data[2]);
       return 1;
+    }
+    else if(data[1] == 'W'){
+      printf("Operating channels: %d\n", len - 2);
+      int i;
+      for(i = 0; i < len - 2; i++)
+        printf("\t%d", data[2+i]);
+      printf("\n");
+      uint32_t msg_size = len - 2;
+      memset(channel_msg.data, 0, 16);
+      memcpy(channel_msg.data, &data[2], msg_size);
+      channel_msg.len = msg_size;
+      process_post(&channel_control, PROCESS_EVENT_MSG, &channel_msg);
     }
   } else if(uip_buf[0] == '?') {
     PRINTF("Got request message of type %c\n", uip_buf[1]);

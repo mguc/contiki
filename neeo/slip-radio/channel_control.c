@@ -3,15 +3,18 @@
 #include "radio.h"
 #include "dev/watchdog.h"
 
-#define DEBUG DEBUG_NONE
+#define DEBUG DEBUG_FULL
 #include "net/ip/uip-debug.h"
 
-#define OPERATING_CHANNELS 4
-const radio_value_t operating_channels[OPERATING_CHANNELS] = {11, 16, 21, 26};
-static channel_t channels[OPERATING_CHANNELS];
+#define NOISE_DETECTION_TIME CLOCK_SECOND/2
+#define CHANNEL_SETTLE_TIME CLOCK_SECOND/10
+#define NOISE_SAMPLE_TIME CLOCK_SECOND/1000
 
-#define RSSI_WAIT_TIME (RTIMER_SECOND / 20)
-#define NOISE_MAX_SHIFT 10
+PROCESS(channel_control, "Channel control process");
+PROCESS(channel_noise_detection, "Channel noise detection process");
+
+static channel_t channels[16];
+static int detect_noise = 0;
 
 int get_rf_channel(void)
 {
@@ -32,59 +35,43 @@ int set_rf_channel(radio_value_t ch)
 }
 
 /*---------------------------------------------------------------------------*/
-void channel_noise_update(channel_t *ch){
-  ++ch->quality.noisefloor_latest_sample;
-  if(ch->quality.noisefloor_latest_sample >= NOISEFLOOR_SAMPLES){
-    ch->quality.noisefloor_latest_sample = 0;
-  }
-  int index = ch->quality.noisefloor_latest_sample;
+void channel_noise_update(channel_t *ch)
+{
   int rssi_level;
   NETSTACK_RADIO.get_value(RADIO_PARAM_RSSI, &rssi_level);
-  ch->quality.noisefloor_samples[index] = rssi_level;
-  int i, current_average = 0;
-  for(i = 0; i < NOISEFLOOR_SAMPLES; i++)
-    current_average += ch->quality.noisefloor_samples[i];
-
-  ch->quality.noisefloor_average = current_average/NOISEFLOOR_SAMPLES;
+  ++ch->quality.noisefloor_samples_count;
+  ch->quality.noisefloor_latest_sample = rssi_level;
+  ch->quality.noisefloor_samples_sum += rssi_level;
+  ch->quality.noisefloor_average = ch->quality.noisefloor_samples_sum/ch->quality.noisefloor_samples_count;
 }
 
-void channels_init(channel_t *p_channels, uint32_t number_of_channels){
+void channels_init(channel_t *p_channels, uint8_t *p_operating_channels, uint32_t number_of_channels)
+{
   int i;
   for(i = 0; i < number_of_channels; i++) {
-    p_channels[i].number = (uint8_t)operating_channels[i];
+    p_channels[i].id = p_operating_channels[i];
     p_channels[i].quality.status = VERY_GOOD;
     p_channels[i].quality.noisefloor_latest_sample = 0;
     p_channels[i].quality.noisefloor_average = 0;
-  }
-  for(i = 0; i < NOISEFLOOR_SAMPLES; i++) {
-    int j;
-    for(j = 0; j < number_of_channels; j++) {
-      set_rf_channel(p_channels[j].number);
-      rtimer_clock_t wt;
-      wt = RTIMER_NOW();
-      watchdog_periodic();
-      while(RTIMER_CLOCK_LT(RTIMER_NOW(), wt + RSSI_WAIT_TIME)) {
-  #if CONTIKI_TARGET_COOJA
-        simProcessRunValue = 1;
-        cooja_mt_yield();
-  #endif /* CONTIKI_TARGET_COOJA */
-      }
-      channel_noise_update(&p_channels[j]);
-    }
+    p_channels[i].quality.noisefloor_samples_sum = 0;
+    p_channels[i].quality.noisefloor_samples_count = 0;
   }
 }
 
-void channels_state_print(channel_t *p_channels, uint32_t number_of_channels){
+void channels_state_print(channel_t *p_channels, uint32_t number_of_channels)
+{
   int i;
   for(i = 0; i < number_of_channels; i++) {
-    PRINTF("Channel: %d, Noisefloor latest: %d, Noisefloor average: %d\n", \
-      p_channels[i].number, \
-      p_channels[i].quality.noisefloor_samples[p_channels[i].quality.noisefloor_latest_sample], \
+    PRINTF("Channel: %d, latest sample: %d, samples count: %d, average: %d\n", \
+      p_channels[i].id, \
+      p_channels[i].quality.noisefloor_latest_sample, \
+      p_channels[i].quality.noisefloor_samples_count, \
       p_channels[i].quality.noisefloor_average);
   }
 }
 
-static int channels_get_best(channel_t *p_channels, uint32_t number_of_channels){
+static int channels_get_best(channel_t *p_channels, uint32_t number_of_channels)
+{
   int i, best_average = 0, best_channel = 0;
   for(i = 0; i < number_of_channels; i++) {
     if(best_average > p_channels[i].quality.noisefloor_average){
@@ -95,42 +82,97 @@ static int channels_get_best(channel_t *p_channels, uint32_t number_of_channels)
   return best_channel;
 }
 
-PROCESS(channel_control, "Channel control process");
 PROCESS_THREAD(channel_control, ev, data)
 {
-  // static struct etimer et;
+  static struct etimer et;
   static int current_channel_index = 0;
-  static int initial_noise_average = 0;
+  static channel_t *channel_ptr = NULL;
+  static uint32_t channel_count = 0;
+
+  PROCESS_BEGIN();
+  process_start(&channel_noise_detection, NULL);
+
+  while(1) {
+    PROCESS_YIELD();
+
+    /* Don't use switch/case statements here, because some macros like
+      PROCESS_YIELD(), PROCESS_YIELD_UNTIL() etc. can NOT be used then. */
+    if(ev == PROCESS_EVENT_MSG) {
+      channel_control_msg_t *msg_ptr = (channel_control_msg_t *)data;
+      channel_count = msg_ptr->len;
+      channel_ptr = channels;
+      PRINTF("Init %ld channels\n", channel_count);
+      channels_init(channel_ptr, msg_ptr->data, channel_count);
+
+      detect_noise = 0;
+      current_channel_index = 0;
+      PRINTF("Setting new channel %d and waiting for %dms\n", \
+        channel_ptr[current_channel_index].id, 1000*CHANNEL_SETTLE_TIME/CLOCK_SECOND);
+      set_rf_channel(channel_ptr[current_channel_index].id);
+      etimer_set(&et, CHANNEL_SETTLE_TIME);
+    }
+    else if(ev == PROCESS_EVENT_TIMER) {
+      if(detect_noise){
+        PRINTF("Stopping noise detection on channel %d\n", channel_ptr[current_channel_index].id);
+        detect_noise = 0;
+        PROCESS_YIELD();
+        PRINTF("Noise detection stopped on channel %d\n", channel_ptr[current_channel_index].id);
+        ++current_channel_index;
+        if(current_channel_index < channel_count){
+          PRINTF("Setting new channel %d and waiting for %dms\n", \
+            channel_ptr[current_channel_index].id, 1000*CHANNEL_SETTLE_TIME/CLOCK_SECOND);
+          set_rf_channel(channel_ptr[current_channel_index].id);
+          etimer_set(&et, CHANNEL_SETTLE_TIME);
+        }
+        else {
+          PRINTF("Noisefloor statistics\n");
+          channels_state_print(channel_ptr, channel_count);
+          int best_channel_index = channels_get_best(channel_ptr, channel_count);
+          PRINTF("Best channel: %d\n", channel_ptr[best_channel_index].id);
+          set_rf_channel(channel_ptr[best_channel_index].id);
+        }
+      }
+      else{
+        PRINTF("Trigger noise detection on channel %d for %dms\n", \
+          channel_ptr[current_channel_index].id, 1000*NOISE_DETECTION_TIME/CLOCK_SECOND);
+        detect_noise = 1;
+        process_post(&channel_noise_detection, PROCESS_EVENT_MSG, &channel_ptr[current_channel_index]);
+        etimer_set(&et, NOISE_DETECTION_TIME);
+      }
+    }
+  }
+
+  PROCESS_END();
+
+}
+
+PROCESS_THREAD(channel_noise_detection, ev, data)
+{
+  static struct etimer et;
+  static channel_t *channel_ptr = NULL;
 
   PROCESS_BEGIN();
 
-  channels_init(channels, OPERATING_CHANNELS);
-  channels_state_print(channels, OPERATING_CHANNELS);
-  current_channel_index = channels_get_best(channels, OPERATING_CHANNELS);
-  printf("Best channel: %d\n", channels[current_channel_index].number);
-  initial_noise_average = channels[current_channel_index].quality.noisefloor_average;
-  set_rf_channel(channels[current_channel_index].number);
+  while(1){
+    PROCESS_YIELD();
 
-  // etimer_set(&et, CLOCK_SECOND);
-  // while(1) {
-  // 
-  //   PROCESS_YIELD();
-  // 
-  //   switch(ev){
-  //     case PROCESS_EVENT_MSG:
-  //       break;
-  //     case PROCESS_EVENT_TIMER:
-  //       channel_noise_update(&channels[current_channel_index]);
-  //       if(initial_noise_average + NOISE_MAX_SHIFT < channels[current_channel_index].quality.noisefloor_average)
-  //         PRINTF("There might be a better channel! Noise: %d\n", \
-  //           channels[current_channel_index].quality.noisefloor_average);
-  //       etimer_set(&et, CLOCK_SECOND);
-  //       break;
-  //     default:
-  //       break;
-  //   }
-  // 
-  // }
+    if(ev == PROCESS_EVENT_MSG) {
+      channel_ptr = (channel_t *)data;
+      PRINTF("Starting noise detection on channel %d\n", channel_ptr->id);
+      etimer_set(&et, 0);
+    }
+    else if(ev == PROCESS_EVENT_TIMER) {
+      channel_noise_update(channel_ptr);
+      if(detect_noise){
+        etimer_set(&et, NOISE_SAMPLE_TIME);
+      }
+      else{
+        PRINTF("Noise detection on channel %d completed\n", channel_ptr->id);
+        process_poll(&channel_control);
+      }
+    }
+  }
 
   PROCESS_END();
+
 }

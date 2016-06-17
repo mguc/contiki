@@ -28,6 +28,7 @@ PROJECT_SOURCEFILES += slip-config.c
 PROJECT_SOURCEFILES += slip-dev.c
 PROJECT_SOURCEFILES += rest_resources.c
 PROJECT_SOURCEFILES += log_helper.c
+PROJECT_SOURCEFILES += channel_selection.c
 
 CONTIKI_WITH_IPV6 = 1
 
