@@ -25,8 +25,9 @@
 #define LAST_CHANNEL 26
 #define CP6_LIST_MAX 4
 #define DISCOVERY_DUTY_CYCLE CLOCK_SECOND/10
-#define OPERATING_CHANNELS 4
-const radio_value_t operating_channels[OPERATING_CHANNELS] = {11, 16, 21, 26};
+#define OPERATING_CHANNELS 15
+const radio_value_t operating_channels[OPERATING_CHANNELS] = \
+  {11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25};
 static uint8_t brain_is_set = 0;
 
 #define QUERY_STATE_URI_LEN  256
