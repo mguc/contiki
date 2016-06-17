@@ -26,10 +26,12 @@ typedef struct channel_quality_s {
   int noisefloor_latest_sample;
   int noisefloor_average;
   int noisefloor_samples[NOISEFLOOR_SAMPLES];
+  int noisefloor_samples_sum;
+  int noisefloor_samples_count;
 } channel_quality_t;
 
 typedef struct channel_s {
-  uint8_t number;
+  uint8_t id;
   channel_quality_t quality;
 } channel_t;
 
