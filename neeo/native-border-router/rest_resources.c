@@ -5,6 +5,7 @@
 #include "rest_resources.h"
 #include "log_helper.h"
 #include "channel_selection.h"
+#include "slip-config.h"
 
 #define DEBUG DEBUG_FULL
 #include "net/ip/uip-debug.h"
@@ -246,7 +247,8 @@ sendir_handler(REQUEST* request, RESPONSE* response)
     return;
   }
 
-  log_msg(LOG_TRACE, "(%lu) !IF%sC%sO%sS%s\n", sizeof(uint16_t)*i, freq, count, offset, sequence);
+  if(slip_config_get_verbose() >= 2)
+    log_msg(LOG_TRACE, "(%lu) !IF%sC%sO%sS%s\n", sizeof(uint16_t)*i, freq, count, offset, sequence);
 
   write_to_slip((unsigned char*)send_buf, sizeof(uint16_t)*i);
   rest_set_response_status(response, OK_200);
