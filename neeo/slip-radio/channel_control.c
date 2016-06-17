@@ -88,13 +88,15 @@ PROCESS_THREAD(channel_control, ev, data)
   static int current_channel_index = 0;
   static channel_t *channel_ptr = NULL;
   static uint32_t channel_count = 0;
-  
+
   PROCESS_BEGIN();
   process_start(&channel_noise_detection, NULL);
-  
+
   while(1) {
     PROCESS_YIELD();
 
+    /* Don't use switch/case statements here, because some macros like
+      PROCESS_YIELD(), PROCESS_YIELD_UNTIL() etc. can NOT be used then. */
     if(ev == PROCESS_EVENT_MSG) {
       channel_control_msg_t *msg_ptr = (channel_control_msg_t *)data;
       channel_count = msg_ptr->len;
@@ -148,12 +150,12 @@ PROCESS_THREAD(channel_noise_detection, ev, data)
 {
   static struct etimer et;
   static channel_t *channel_ptr = NULL;
-  
+
   PROCESS_BEGIN();
-  
+
   while(1){
     PROCESS_YIELD();
-    
+
     if(ev == PROCESS_EVENT_MSG) {
       channel_ptr = (channel_t *)data;
       PRINTF("Starting noise detection on channel %d\n", channel_ptr->id);
