@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include "channel_selection.h"
 
+//Wifi Channel bandwith is 20MHz or 40Mhz (unsure).
+//NOTE: the best performance for WIFI is when WIFI channels are at least 5 channels away fron another WIFI channel
 const channel_t wifi_channels[WIFI_CHANNELS] = {
   {1, 2390, 2412, 2434},
   {2, 2395, 2417, 2439},
