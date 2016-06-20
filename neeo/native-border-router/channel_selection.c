@@ -1,21 +1,23 @@
 #include <stdio.h>
 #include "channel_selection.h"
 
+//Wifi Channel bandwith is 20MHz or 40Mhz (unsure).
+//NOTE: the best performance for WIFI is when WIFI channels are at least 5 channels away fron another WIFI channel
 const channel_t wifi_channels[WIFI_CHANNELS] = {
-  {1, 2401, 2412, 2423},
-  {2, 2404, 2417, 2428},
-  {3, 2411, 2422, 2433},
-  {4, 2416, 2427, 2438},
-  {5, 2421, 2432, 2443},
-  {6, 2426, 2437, 2448},
-  {7, 2431, 2442, 2453},
-  {8, 2436, 2447, 2458},
-  {9, 2441, 2452, 2463},
-  {10, 2446, 2457, 2468},
-  {11, 2451, 2462, 2473},
-  {12, 2456, 2467, 2478},
-  {13, 2461, 2472, 2483},
-  {14, 2473, 2484, 2495}
+  {1, 2390, 2412, 2434},
+  {2, 2395, 2417, 2439},
+  {3, 2400, 2422, 2444},
+  {4, 2405, 2427, 2449},
+  {5, 2410, 2432, 2454},
+  {6, 2415, 2437, 2459},
+  {7, 2420, 2442, 2464},
+  {8, 2425, 2447, 2469},
+  {9, 2430, 2452, 2474},
+  {10, 2435, 2457, 2479},
+  {11, 2440, 2462, 2484},
+  {12, 2445, 2467, 2489},
+  {13, 2450, 2472, 2494},
+  {14, 2462, 2484, 2506}
 };
 
 const channel_t sixlowpan_channels[SIXLOWPAN_CHANNELS] = {
@@ -71,6 +73,21 @@ static int is_channel_preferred(wifi_region_t wifi_region, unsigned int channel_
       return 1;
   }
   return 0;
+}
+
+int get_wifi_channel_id(unsigned int wifi_frequency){
+  int i;
+  /* Find the wifi channel in the LUT */
+  for(i = 0; i < WIFI_CHANNELS; i++){
+    if(wifi_channels[i].center_freq == wifi_frequency)
+      break;
+  }
+  if(i == WIFI_CHANNELS){
+    printf("Wifi channel not found!\n");
+    return -1;
+  }
+  else
+    return wifi_channels[i].id;
 }
 
 int get_clear_sixlowpan_channels(unsigned int wifi_frequency, wifi_region_t wifi_region, \

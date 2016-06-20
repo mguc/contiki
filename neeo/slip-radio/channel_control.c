@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "channel_control.h"
 #include "contiki.h"
 #include "radio.h"
@@ -70,13 +71,34 @@ void channels_state_print(channel_t *p_channels, uint32_t number_of_channels)
   }
 }
 
-static int channels_get_best(channel_t *p_channels, uint32_t number_of_channels)
+static int channels_get_best(channel_t *p_channels, uint32_t number_of_channels, uint32_t wifi_channel)
 {
   int i, best_average = 0, best_channel = 0;
   for(i = 0; i < number_of_channels; i++) {
+    // round channel noise to even number
+    if(p_channels[i].quality.noisefloor_average % 2)
+      p_channels[i].quality.noisefloor_average -= 1;
     if(best_average > p_channels[i].quality.noisefloor_average){
       best_channel = i;
       best_average = p_channels[i].quality.noisefloor_average;
+    }
+  }
+
+  // get all channel indexes with the same noisefloor average
+  int j = 0;
+  int best_channel_indexes[number_of_channels];
+  for(i = 0; i < number_of_channels; i++) {
+    if(best_average == p_channels[i].quality.noisefloor_average)
+      best_channel_indexes[j++] = i;
+  }
+
+  // get the channel furthest from the current wifi channel
+  int best_channel_difference = 0, channel_diff = 0;
+  for(i = 0; i < j; i++){
+    channel_diff = abs(p_channels[best_channel_indexes[i]].id - 10 - wifi_channel);
+    if(channel_diff > best_channel_difference){
+      best_channel = best_channel_indexes[i];
+      best_channel_difference = channel_diff;
     }
   }
   return best_channel;
@@ -88,6 +110,8 @@ PROCESS_THREAD(channel_control, ev, data)
   static int current_channel_index = 0;
   static channel_t *channel_ptr = NULL;
   static uint32_t channel_count = 0;
+  static uint32_t wifi_channel = 0;
+  static channel_control_msg_t *msg_ptr = NULL;
 
   PROCESS_BEGIN();
   process_start(&channel_noise_detection, NULL);
@@ -98,11 +122,12 @@ PROCESS_THREAD(channel_control, ev, data)
     /* Don't use switch/case statements here, because some macros like
       PROCESS_YIELD(), PROCESS_YIELD_UNTIL() etc. can NOT be used then. */
     if(ev == PROCESS_EVENT_MSG) {
-      channel_control_msg_t *msg_ptr = (channel_control_msg_t *)data;
-      channel_count = msg_ptr->len;
+      msg_ptr = (channel_control_msg_t *)data;
+      wifi_channel = msg_ptr->data[0];
+      channel_count = msg_ptr->len-1;
       channel_ptr = channels;
       PRINTF("Init %ld channels\n", channel_count);
-      channels_init(channel_ptr, msg_ptr->data, channel_count);
+      channels_init(channel_ptr, msg_ptr->data+1, channel_count);
 
       detect_noise = 0;
       current_channel_index = 0;
@@ -127,7 +152,7 @@ PROCESS_THREAD(channel_control, ev, data)
         else {
           PRINTF("Noisefloor statistics\n");
           channels_state_print(channel_ptr, channel_count);
-          int best_channel_index = channels_get_best(channel_ptr, channel_count);
+          int best_channel_index = channels_get_best(channel_ptr, channel_count, wifi_channel);
           PRINTF("Best channel: %d\n", channel_ptr[best_channel_index].id);
           set_rf_channel(channel_ptr[best_channel_index].id);
         }
