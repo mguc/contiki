@@ -73,6 +73,21 @@ static int is_channel_preferred(wifi_region_t wifi_region, unsigned int channel_
   return 0;
 }
 
+int get_wifi_channel_id(unsigned int wifi_frequency){
+  int i;
+  /* Find the wifi channel in the LUT */
+  for(i = 0; i < WIFI_CHANNELS; i++){
+    if(wifi_channels[i].center_freq == wifi_frequency)
+      break;
+  }
+  if(i == WIFI_CHANNELS){
+    printf("Wifi channel not found!\n");
+    return -1;
+  }
+  else
+    return wifi_channels[i].id;
+}
+
 int get_clear_sixlowpan_channels(unsigned int wifi_frequency, wifi_region_t wifi_region, \
   unsigned char *channel_buffer, unsigned int max_size){
   int i,j, size = 0;

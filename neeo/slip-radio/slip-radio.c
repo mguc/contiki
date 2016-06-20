@@ -190,10 +190,11 @@ slip_radio_cmd_handler(const uint8_t *data, int len)
       return 1;
     }
     else if(data[1] == 'W'){
-      printf("Operating channels: %d\n", len - 2);
+      printf("Wifi channel: %d\n", data[2]);
+      printf("Operating channels: %d\n", len - 3);
       int i;
-      for(i = 0; i < len - 2; i++)
-        printf("\t%d", data[2+i]);
+      for(i = 0; i < len - 3; i++)
+        printf("\t%d", data[3+i]);
       printf("\n");
       uint32_t msg_size = len - 2;
       memset(channel_msg.data, 0, 16);

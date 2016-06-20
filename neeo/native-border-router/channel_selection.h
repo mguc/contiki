@@ -20,6 +20,7 @@ typedef enum wifi_region_e {
 
 extern const channel_t wifi_channels[];
 
+int get_wifi_channel_id(unsigned int wifi_frequency);
 int get_clear_sixlowpan_channels(unsigned int wifi_frequency, wifi_region_t wifi_region, \
   unsigned char *channel_buffer, unsigned int max_size);
 
