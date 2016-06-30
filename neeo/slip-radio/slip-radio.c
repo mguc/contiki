@@ -109,6 +109,8 @@ packet_sent(void *ptr, int status, int transmissions)
 static int
 slip_radio_cmd_handler(const uint8_t *data, int len)
 {
+  // stop polling led control pin
+  led_stop_polling();
   int i = 0;
   if(data[0] == '!') {
     /* should send out stuff to the radio - ignore it as IP */
@@ -205,8 +207,6 @@ slip_radio_cmd_handler(const uint8_t *data, int len)
   } else if(uip_buf[0] == '?') {
     PRINTF("Got request message of type %c\n", uip_buf[1]);
     if(data[1] == 'M') {
-      // stop polling led control pin
-      led_stop_polling();
       /* this is just a test so far... just to see if it works */
       uip_buf[0] = '!';
       uip_buf[1] = 'M';
