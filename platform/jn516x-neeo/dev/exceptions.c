@@ -48,7 +48,7 @@
 
 /** Define to dump the stack on exception */
 #ifndef EXC_DUMP_STACK
-#define EXC_DUMP_STACK
+/* #define  EXC_DUMP_STACK */
 #endif /* EXC_DUMP_STACK */
 
 /** Define to dump registers on exception */
@@ -130,8 +130,8 @@ extern void *stack_low_water_mark;
 /****************************************************************************/
 /*---------------------------------------------------------------------------*/
 #if PRINT_STACK_ON_REBOOT
-#include "dev/uart1.h"
-#define printchar(X) uart1_write_direct(X)
+#include "dev/uart0.h"
+#define printchar(X) uart0_write_direct(X)
 /*---------------------------------------------------------------------------*/
 static void
 hexprint(uint8 v)
