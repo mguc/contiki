@@ -135,7 +135,7 @@ ir_start(const uint16_t *data, uint32_t len)
 {
     int ret = 0;
     if(len > IR_CONTROL_BUF_MAX_SIZE) {
-        PRINTF("IR:ERR Payload too large! %u\n", len);
+        PRINTF("IR:ERR Payload too large! %lu\n", len);
         ret = 1;
         goto cleanup;
     }
