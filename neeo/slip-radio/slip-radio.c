@@ -204,8 +204,8 @@ slip_radio_cmd_handler(const uint8_t *data, int len)
       channel_msg.len = msg_size;
       process_post(&channel_control, PROCESS_EVENT_MSG, &channel_msg);
     }
-  } else if(uip_buf[0] == '?') {
-    PRINTF("Got request message of type %c\n", uip_buf[1]);
+  } else if(data[0] == '?') {
+    PRINTF("Got request message of type %c\n", data[1]);
     if(data[1] == 'M') {
       /* this is just a test so far... just to see if it works */
       uip_buf[0] = '!';
