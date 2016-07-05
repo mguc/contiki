@@ -45,6 +45,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "rest_resources.h"
+#include "slipradio_exceptions.h"
 
 #define DEBUG DEBUG_NONE
 #include "net/ip/uip-debug.h"
@@ -83,6 +84,7 @@ border_router_cmd_handler(const uint8_t *data, int len)
       return 1;
     } else if(data[1] == 'C' && command_context == CMD_CONTEXT_RADIO) {
       /* We need to know that this is from the slip-radio here. */
+      update_channel(data[2]);
       printf("Channel is:%d\n", data[2]);
       return 1;
     } else if(data[1] == 'R' && command_context == CMD_CONTEXT_RADIO) {
@@ -126,6 +128,13 @@ border_router_cmd_handler(const uint8_t *data, int len)
         }
         printf("learnir: ACK cmd: %02x status: %02x\n", data[2], data[3]);
       }
+      return 1;
+    }
+    else if(data[1] == 'E') {
+      static struct ctimer slip_reset_timer;
+      register_slipradio_exception(data[2]);
+      // initiate setting reset after 500ms
+      ctimer_set(&slip_reset_timer, CLOCK_SECOND/2, handle_slipradio_exception, NULL);
       return 1;
     }
   } else if(data[0] == '?') {
