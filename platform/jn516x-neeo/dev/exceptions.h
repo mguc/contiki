@@ -48,7 +48,8 @@ typedef enum {
   E_EXC_SYSCALL = 0x0C,
   E_EXC_TRAP = 0x0E,
   E_EXC_GENERIC = 0x0F,
-  E_EXC_STACK_OVERFLOW = 0x10
+  E_EXC_STACK_OVERFLOW = 0x10,
+  E_EXC_WATCHDOG = 0xFF // added custom value
 } eExceptionType;
 
 /* Exceptions set up function */

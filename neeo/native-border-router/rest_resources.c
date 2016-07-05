@@ -10,6 +10,7 @@
 #define DEBUG DEBUG_FULL
 #include "net/ip/uip-debug.h"
 
+#define SENDIR_STATE_TIMEOUT_S 10
 #define IRBLASTER_START 0x0000
 #define IRBLASTER_STOP  0x0001
 #define SWAP_BYTES16(__x) ((((__x) & 0xff) << 8) | ((__x) >> 8))
@@ -478,6 +479,8 @@ void channel_handler(REQUEST* request, RESPONSE* response){
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(rest_server_process, ev, data)
 {
+  static struct etimer et;
+  static int sendir_timeout_seconds = 0;
   PROCESS_BEGIN();
   log_msg(LOG_INFO, "REST: Starting REST server\n");
   rest_init();
@@ -492,6 +495,32 @@ PROCESS_THREAD(rest_server_process, ev, data)
   sendir_state.result = -1;
   learnir_state.state = COMMAND_STATE_IDLE;
   learnir_state.result = 0;
+
+  etimer_set(&et, CLOCK_SECOND);
+  while(1){
+
+    PROCESS_YIELD();
+    if(ev == PROCESS_EVENT_TIMER)
+    {
+      if(sendir_state.state != COMMAND_STATE_IDLE)
+      {
+        ++sendir_timeout_seconds;
+        if(sendir_timeout_seconds >= SENDIR_STATE_TIMEOUT_S)
+        {
+          log_msg(LOG_ERROR, "REST: Timeout has been reached. Resetting sendir_state to COMMAND_STATE_IDLE");
+          sendir_state.state = COMMAND_STATE_IDLE;
+          sendir_timeout_seconds = 0;
+        }
+      }
+      else
+      {
+        sendir_timeout_seconds = 0;
+      }
+
+      etimer_set(&et, CLOCK_SECOND);
+    }
+
+  }
 
   PROCESS_END();
 }

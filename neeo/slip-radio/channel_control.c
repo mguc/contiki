@@ -2,7 +2,7 @@
 #include "channel_control.h"
 #include "contiki.h"
 #include "radio.h"
-#include "dev/watchdog.h"
+#include "cmd.h"
 
 #define DEBUG DEBUG_FULL
 #include "net/ip/uip-debug.h"
@@ -155,6 +155,9 @@ PROCESS_THREAD(channel_control, ev, data)
           int best_channel_index = channels_get_best(channel_ptr, channel_count, wifi_channel);
           PRINTF("Best channel: %d\n", channel_ptr[best_channel_index].id);
           set_rf_channel(channel_ptr[best_channel_index].id);
+          // update channel information on native border router
+          uint8_t cmd[2] = {'?', 'C'};
+          cmd_input(cmd, 2);
         }
       }
       else{

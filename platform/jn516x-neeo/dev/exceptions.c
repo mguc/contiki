@@ -43,12 +43,15 @@
 #endif /* EXCEPTION_STALLS_SYSTEM */
 
 #ifndef PRINT_STACK_ON_REBOOT
-#define PRINT_STACK_ON_REBOOT 1
+#define PRINT_STACK_ON_REBOOT 0
 #endif /* PRINT_STACK_ON_REBOOT */
 
+#ifndef SEND_EXCEPTION_COMMAND
+#define SEND_EXCEPTION_COMMAND 1
+#endif /* SEND_EXCEPTION_COMMAND */
 /** Define to dump the stack on exception */
 #ifndef EXC_DUMP_STACK
-#define EXC_DUMP_STACK
+/* #define  EXC_DUMP_STACK */
 #endif /* EXC_DUMP_STACK */
 
 /** Define to dump registers on exception */
@@ -129,9 +132,11 @@ extern void *stack_low_water_mark;
 /***        Local Functions                                               ***/
 /****************************************************************************/
 /*---------------------------------------------------------------------------*/
+#if (PRINT_STACK_ON_REBOOT || SEND_EXCEPTION_COMMAND)
+#include "dev/uart0.h"
+#define printchar(X) uart0_write_direct(X)
+#endif /* (PRINT_STACK_ON_REBOOT || SEND_EXCEPTION_COMMAND) */
 #if PRINT_STACK_ON_REBOOT
-#include "dev/uart1.h"
-#define printchar(X) uart1_write_direct(X)
 /*---------------------------------------------------------------------------*/
 static void
 hexprint(uint8 v)
@@ -182,7 +187,6 @@ vEXC_Register(void)
   BUS_ERROR = (uint32)exception_handler;
   UNALIGNED_ACCESS = (uint32)exception_handler;
   ILLEGAL_INSTRUCTION = (uint32)exception_handler;
-  SYSCALL = (uint32)exception_handler;
   TRAP = (uint32)exception_handler;
   GENERIC = (uint32)exception_handler;
   STACK_OVERFLOW = (uint32)exception_handler;
@@ -207,11 +211,6 @@ vException_UnalignedAccess(uint32 *pu32Stack, eExceptionType eType)
 }
 PUBLIC void
 vException_IllegalInstruction(uint32 *pu32Stack, eExceptionType eType)
-{
-  exception_handler(pu32Stack, eType);
-}
-PUBLIC void
-vException_SysCall(uint32 *pu32Stack, eExceptionType eType)
 {
   exception_handler(pu32Stack, eType);
 }
@@ -246,7 +245,9 @@ exception_handler(uint32 *pu32Stack, eExceptionType eType)
 #if (defined EXC_DUMP_STACK) || (defined EXC_DUMP_REGS)
   int i;
 #endif
+#if !SEND_EXCEPTION_COMMAND
   uint32 u32EPCR, u32EEAR, u32Stack;
+#endif /* !SEND_EXCEPTION_COMMAND */
   char *pcString;
 
   MICRO_DISABLE_INTERRUPTS();
@@ -286,10 +287,20 @@ exception_handler(uint32 *pu32Stack, eExceptionType eType)
   }
 
   if(bAHI_WatchdogResetEvent()) {
+    eType = E_EXC_WATCHDOG;
     pcString = "WATCHDOG";
   }
   vAHI_WatchdogStop();
 
+#if SEND_EXCEPTION_COMMAND
+  #define SLIP_END 0300
+  printchar(SLIP_END);
+  // send exception command to native border router
+  printchar('!');
+  printchar('E');
+  printchar(eType);
+  printchar(SLIP_END);
+#else
   /* Pull the EPCR and EEAR values from where they've been saved by the ROM exception handler */
   u32EPCR = pu32Stack[PROGRAM_COUNTER];
   u32EEAR = pu32Stack[EFFECTIVE_ADDR];
@@ -312,6 +323,7 @@ exception_handler(uint32 *pu32Stack, eExceptionType eType)
   printstring(" Line: ");
   hexprint32(debug_line);
   printstring("\n");
+#endif /* SEND_EXCEPTION_COMMAND */
 
 #ifdef EXC_DUMP_REGS
   printstring("\nREGS: ");
