@@ -6,14 +6,14 @@
   content structures.
 */
 static unsigned char current_channel = 0;
-static unsigned int slipradio_exceptions_count = 0;
+static unsigned int slipradio_exception_count = 0;
 
 void update_channel(unsigned char ch){
   current_channel = ch;
 }
 
 unsigned int get_exception_count(){
-  return slipradio_exceptions_count;
+  return slipradio_exception_count;
 }
 
 void handle_slipradio_exception(){
@@ -29,7 +29,7 @@ void handle_slipradio_exception(){
 
 void register_slipradio_exception(eExceptionType exception_type){
   const char *slipradio_exception;
-  ++slipradio_exceptions_count;
+  ++slipradio_exception_count;
   
   switch(exception_type) {
     case E_EXC_BUS_ERROR:
@@ -68,5 +68,5 @@ void register_slipradio_exception(eExceptionType exception_type){
       slipradio_exception = "UNKNOWN";
       break;
   }
-  printf("%s EXCEPTION occured, exception count: %d\n", slipradio_exception, slipradio_exceptions_count);
+  printf("%s EXCEPTION occured, exception count: %d\n", slipradio_exception, slipradio_exception_count);
 }
