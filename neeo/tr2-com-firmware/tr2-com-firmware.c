@@ -20,7 +20,7 @@
 /*---------------------------------------------------------------------------*/
 #define BRAIN_PORT        3100
 #define BRAIN_COAP_PORT   3901
-#define FW_MAJOR_VERSION    "28"
+#define FW_MAJOR_VERSION    "29"
 
 #define FIRST_CHANNEL 11
 #define LAST_CHANNEL 26
