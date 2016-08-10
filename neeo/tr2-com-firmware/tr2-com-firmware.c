@@ -13,13 +13,14 @@
 #include "rtc.h"
 #include "er-coap-engine.h"
 #include "rest_server.h"
+#include "io_power_control.h"
 
 #define DEBUG_LEVEL DEBUG_NONE
 #include "log_helper.h"
 /*---------------------------------------------------------------------------*/
 #define BRAIN_PORT        3100
 #define BRAIN_COAP_PORT   3901
-#define FW_MAJOR_VERSION    "28"
+#define FW_MAJOR_VERSION    "29"
 
 #define FIRST_CHANNEL 11
 #define LAST_CHANNEL 26
@@ -191,6 +192,8 @@ PROCESS_THREAD(query_process, ev, data)
   uip_ds6_init();
   uip_nd6_init();
   rpl_init();
+
+  io_power_control_init();
 
   while(1) {
     PROCESS_YIELD();

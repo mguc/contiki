@@ -34,6 +34,7 @@ PROJECT_SOURCEFILES += rtc.c
 PROJECT_SOURCEFILES += rest_server.c
 PROJECT_SOURCEFILES += tr2-debug.c
 PROJECT_SOURCEFILES += rimestats.c
+PROJECT_SOURCEFILES += io_power_control.c
 
 CONTIKI_WITH_IPV6 = 1
 include $(CONTIKI)/Makefile.include
