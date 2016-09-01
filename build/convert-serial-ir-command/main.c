@@ -11,7 +11,7 @@ void sendir_handler(uint32_t freq_val, uint16_t offset_val, char sequence[12288]
   char* p = NULL;
   uint16_t buf;
 
-  //i=0&f=36000&c=10&o=3&s=21.40.21.40.10.50.10.50'
+  //example call i=0&f=36000&c=10&o=3&s=21.40.21.40.10.50.10.50'
 
   strcpy((char*)send_buf, "!I");
   send_buf[1] = SWAP_BYTES16(IRBLASTER_START);
@@ -20,14 +20,10 @@ void sendir_handler(uint32_t freq_val, uint16_t offset_val, char sequence[12288]
   send_buf[4] = SWAP_BYTES16(count_val);
   send_buf[5] = SWAP_BYTES16(offset_val);
 
-//0x21, 0x49, 0x00, 0x00, 0x75, 0x30, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x15, 0x00, 0x28, 0x00, 0x15, 0x00, 0x28, 0x00, 0x0A, 0x00, 0x32, 0x00, 0x0A, 0x00, 0x32, ~
-
   int i = 6;
   p = sequence;
   do {
     buf = strtoul(p, &p, 10);
-    printf("%u -- ", buf & 0xff);
-    printf("%u\n", (buf >> 8) & 0xff);
     send_buf[i++] = SWAP_BYTES16(buf);
     if(*p == 0)
       break;
@@ -48,12 +44,13 @@ void sendir_handler(uint32_t freq_val, uint16_t offset_val, char sequence[12288]
   for (int n = 0; n < i*2; n++) {
     printf("0x%.2X, ", pnt[n]);
   }
+  //write footer
+  printf("0x%.2X", 0xc0);
 }
 
 int main(int argc, const char * argv[]) {
     printf("IR to UART MARSHALLER!\n");
-
     //sendir,1:1,1,37825,1,1,171,171,21,64,21,64,21,64,21,21,21,21,21,21,21,21,21,21,21,64,21,64,21,64,21,21,21,21,21,21,21,21,21,21,21,64,21,64,21,64,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,64,21,64,21,64,21,64,21,64,21,1776
-    sendir_handler(37825, 0, "171.171.21.64.21.64.21.64.21.21.21.21.21.21.21.21.21.21.21.64.21.64.21.64.21.21.21.21.21.21.21.21.21.21.21.64.21.64.21.64.21.21.21.21.21.21.21.21.21.21.21.21.21.21.21.21.21.64.21.64.21.64.21.64.21.64.21.1776");
+    sendir_handler(37825, 1, "171.171.21.64.21.64.21.64.21.21.21.21.21.21.21.21.21.21.21.64.21.64.21.64.21.21.21.21.21.21.21.21.21.21.21.64.21.64.21.64.21.21.21.21.21.21.21.21.21.21.21.21.21.21.21.21.21.64.21.64.21.64.21.64.21.64.21.1776");
     return 0;
 }
