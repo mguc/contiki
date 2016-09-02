@@ -203,6 +203,7 @@ slip_radio_cmd_handler(const uint8_t *data, int len)
       memcpy(channel_msg.data, &data[2], msg_size);
       channel_msg.len = msg_size;
       process_post(&channel_control, PROCESS_EVENT_MSG, &channel_msg);
+      return 1;
     }
   } else if(data[0] == '?') {
     PRINTF("Got request message of type %c\n", data[1]);
@@ -295,7 +296,7 @@ PROCESS_THREAD(slip_radio_process, ev, data)
   PROCESS_BEGIN();
 
   ir_init();
-  // ir_learn_init();
+  ir_learn_init();
   init();
   NETSTACK_RDC.off(1);
 #ifdef SLIP_RADIO_CONF_SENSORS
